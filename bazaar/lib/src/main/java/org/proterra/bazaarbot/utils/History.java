@@ -1,27 +1,25 @@
-package bazaarbot.utils;
+package org.proterra.bazaarbot.utils;
 
 /**
- * ...
- * @author larsiusprime
  */
-class History
+public class History
 {
-	public var prices(default, null):HistoryLog;
-	public var asks  (default, null):HistoryLog;
-	public var bids  (default, null):HistoryLog;
-	public var trades(default, null):HistoryLog;
-	public var profit(default, null):HistoryLog;
+	public HistoryLog prices;
+	public HistoryLog asks;
+	public HistoryLog bids;
+	public HistoryLog trades;
+	public HistoryLog profit;
 
-	public function new()
+	public History()
 	{
-		prices = new HistoryLog(Price);
-		asks   = new HistoryLog(Ask);
-		bids   = new HistoryLog(Bid);
-		trades = new HistoryLog(Trade);
-		profit = new HistoryLog(Profit);
+		prices = new HistoryLog(EconNoun.Price);
+		asks   = new HistoryLog(EconNoun.Ask);
+		bids   = new HistoryLog(EconNoun.Bid);
+		trades = new HistoryLog(EconNoun.Trade);
+		profit = new HistoryLog(EconNoun.Profit);
 	}
 
-	public function register(good:String)
+	public void register(String good)
 	{
 		prices.register(good);
 		asks.register(good);

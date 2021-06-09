@@ -1,19 +1,23 @@
-package bazaarbot.utils;
-import bazaarbot.utils.EconNoun;
+package org.proterra.bazaarbot.utils;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * ...
  * @author larsiusprime
  */
-class HistoryLog
+public class HistoryLog
 {
-	var type:EconNoun;
-	var log:Map<String, Array<Float>>;
+	EconNoun type;
+	Map<String, ArrayList<Float>> log;
 
-	public function new(type:EconNoun)
+	public HistoryLog(EconNoun type)
 	{
 		this.type = type;
-		log = new Map<String, Array<Float>>();
+		log = new HashMap<String, ArrayList<Float>>();
 	}
 
 	/**
@@ -21,12 +25,12 @@ class HistoryLog
 	 * @param	name
 	 * @param	amount
 	 */
-	public function add(name:String, amount:Float)
+	public void add(String name, float amount)
 	{
-		if (log.exists(name))
+		if (log.containsKey(name))
 		{
 			var list = log.get(name);
-			list.push(amount);
+			list.add(amount);
 		}
 	}
 
@@ -34,11 +38,11 @@ class HistoryLog
 	 * Register a new category list in this log
 	 * @param	name
 	 */
-	public function register(name:String)
+	public void register(String name)
 	{
-		if (!log.exists(name))
+		if (!log.containsKey(name))
 		{
-			log.set(name, new Array<Float>());
+			log.put(name, new ArrayList<Float>());
 		}
 	}
 
@@ -48,20 +52,20 @@ class HistoryLog
 	 * @param	range how far to look back
 	 * @return
 	 */
-	public function average(name:String, range:Int):Float
+	public float average(String name, int range)
 	{
-		if (log.exists(name))
+		if (log.containsKey(name))
 		{
-			var list = log.get(name);
-			var amt:Float = 0.0;
-			var length = list.length;
+			List<Float> list = log.get(name);
+			float amt = 0.0f;
+			var length = list.size();
 			if (length < range)
 			{
 				range = length;
 			}
-			for (i in 0...range)
+			for (float i: list)
 			{
-				amt += list[length - 1 - i];
+				amt += i;
 			}
 			return amt / range;
 		}

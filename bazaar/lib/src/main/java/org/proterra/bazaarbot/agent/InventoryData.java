@@ -21,8 +21,8 @@ class InventoryData
 		this.size = size;
 	}
 
-	public static InventoryData fromJson(String data)
-	{
+	//public static InventoryData fromJson(String data)
+	//{
 		//  maxSize:Int = data.max_size;
 		//  ideal = new Map<String, Float>();
 		//  start = new Map<String, Float>();
@@ -47,5 +47,5 @@ class InventoryData
 		// }
 
 		// return new InventoryData(maxSize, ideal, start, size);
-	}
+//	}
 }

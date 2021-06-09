@@ -1,4 +1,4 @@
-package jobs;
+package org.proterra.danp.jobs;
 import bazaarbot.agent.BasicAgent;
 import bazaarbot.agent.Logic;
 import bazaarbot.Market;

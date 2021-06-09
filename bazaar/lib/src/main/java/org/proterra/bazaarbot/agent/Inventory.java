@@ -18,126 +18,12 @@ class Inventory
 			// how much space each thing takes up
 	public Inventory()
 	{
-		sizes = new HashMap();
+		sizes = new HashMap<String, Float>();
 		stuff = new HashMap<String, Float>();
 		ideal = new HashMap<String, Float>();
 		maxSize = 0;
 	}
 
-	public void fromData(InventoryData data)
-	{
-		 sizes = [];
-		 amounts = [];
-		for (key in data.start.keys())
-		{
-			sizes.push(key);
-			amounts.push(data.start.get(key));
-		}
-		setStuff(sizes, amounts);
-		sizes = [];
-		amounts = [];
-		for (key in data.size.keys())
-		{
-			sizes.push(key);
-			amounts.push(data.size.get(key));
-		}
-		setSizes(sizes, amounts);
-		sizes = [];
-		amounts = [];
-		for (key in data.ideal.keys())
-		{
-			sizes.push(key);
-			amounts.push(data.ideal.get(key));
-			setIdeal(sizes, amounts);
-		}
-		maxSize = data.maxSize;
-	}
-
-	public  copy():Inventory
-	{
-		 i:Inventory = new Inventory();
-		 stufff:Array<Float> = [];
-		 stuffi:Array<String> = [];
-		 idealf:Array<Float> = [];
-		 ideali:Array<String> = [];
-		 sizesf:Array<Float> = [];
-		 sizesi:Array<String> = [];
-		for (key in _stuff.keys())
-		{
-			stufff.push(_stuff.get(key));
-			stuffi.push(key);
-		}
-		for (key in _ideal.keys())
-		{
-			idealf.push(_ideal.get(key));
-			ideali.push(key);
-		}
-		for (key in _sizes.keys())
-		{
-			sizesf.push(_sizes.get(key));
-			sizesi.push(key);
-		}
-		i.setStuff(stuffi, stufff);
-		i.setIdeal(ideali, idealf);
-		i.setSizes(sizesi, sizesf);
-		i.maxSize = maxSize;
-		return i;
-	}
-
-	public  destroy():Void
-	{
-		for (key in _stuff.keys())
-		{
-			_stuff.remove(key);
-		}
-		for (key in _ideal.keys())
-		{
-			_ideal.remove(key);
-		}
-		for (key in _sizes.keys())
-		{
-			_sizes.remove(key);
-		}
-		_stuff = null;
-		_ideal = null;
-		_sizes = null;
-	}
-
-	/**
-	 * Set amounts of ious commodities
-	 * @param	stuff_
-	 * @param	amounts_
-	 */
-
-	public  setStuff(stuff:Array<String>, amounts:Array<Float>):Void
-	{
-		for (i in 0...stuff.length)
-		{
-			_stuff.set(stuff[i], amounts[i]);
-		}
-	}
-
-	/**
-	 * Set how much of each commodity to stockpile
-	 * @param	stuff_
-	 * @param	amounts_
-	 */
-
-	public  setIdeal(ideal:Array<String>, amounts:Array<Float>):Void
-	{
-		for (i in 0...ideal.length)
-		{
-			_ideal.set(ideal[i], amounts[i]);
-		}
-	}
-
-	public  setSizes(sizes:Array<String>, amounts:Array<Float>):Void
-	{
-		for (i in 0...sizes.length)
-		{
-			_sizes.set(sizes[i], amounts[i]);
-		}
-	}
 
 	/**
 	 * Returns how much of this
@@ -145,44 +31,44 @@ class Inventory
 	 * @return
 	 */
 
-	public  query(good:String):Float
+	public float query(String goodid)
 	{
-		if (_stuff.exists(good))
+		if (stuff.containsKey(goodid))
 		{
-			return _stuff.get(good);
+			return stuff.get(goodid);
 		}
 		return 0;
 	}
 
-	public  ideal(good:String):Float
+	public float ideal(String goodid)
 	{
-		if (_ideal.exists(good))
+		if (ideal.containsKey(goodid))
 		{
-			return _ideal.get(good);
+			return ideal.get(goodid);
 		}
 		return 0;
 	}
 
-	public  getEmptySpace():Float
+	public float getEmptySpace()
 	{
 		return maxSize - getUsedSpace();
 	}
 
-	public  getUsedSpace():Float
+	public float getUsedSpace()
 	{
-		 space_used:Float = 0;
-		for (key in _stuff.keys())
+		float space_used = 0.0f;
+		for (String key: stuff.keySet())
 		{
-			space_used += _stuff.get(key) * _sizes.get(key);
+			space_used += stuff.get(key) * sizes.get(key);
 		}
 		return space_used;
 	}
 
-	public  getCapacityFor(good:String):Float
+	public float getCapacityFor(String goodid)
 	{
-		if (_sizes.exists(good))
+		if (sizes.containsKey(goodid))
 		{
-			return _sizes.get(good);
+			return sizes.get(goodid);
 		}
 		return -1;
 	}
@@ -193,13 +79,13 @@ class Inventory
 	 * @param	delta_ amount added
 	 */
 
-	public  change(good:String, delta:Float):Void
+	public void change(String goodid, float delta)
 	{
-		 result:Float;
+		float result;
 
-		if (_stuff.exists(good))
+		if (stuff.containsKey(goodid))
 		{
-			 amount:Float = _stuff.get(good);
+			float amount = stuff.get(goodid);
 			result = amount + delta;
 		}
 		else
@@ -212,7 +98,7 @@ class Inventory
 			result = 0;
 		}
 
-		_stuff.set(good, result);
+		stuff.put(goodid, result);
 	}
 
 	/**
@@ -221,13 +107,13 @@ class Inventory
 	 * @return
 	 */
 
-	public  surplus(good:String):Float
+	public float surplus(String goodid)
 	{
-		 amt:Float = query(good);
-		 ideal:Float = _ideal.get(good);
-		if (amt > ideal)
+		float amt = query(goodid);
+		float idealAmt = ideal.get(goodid);
+		if (amt > idealAmt)
 		{
-			return (amt - ideal);
+			return (amt - idealAmt);
 		}
 		return 0;
 	}
@@ -238,17 +124,17 @@ class Inventory
 	 * @return
 	 */
 
-	public  shortage(good:String):Float
+	public float shortage(String goodid)
 	{
-		if (!_stuff.exists(good))
+		if (!stuff.containsKey(goodid))
 		{
 			return 0;
 		}
-		 amt:Float = query(good);
-		 ideal:Float = _ideal.get(good);
-		if (amt < ideal)
+		float amt = query(goodid);
+		float idealAmt = ideal.get(goodid);
+		if (amt < idealAmt)
 		{
-			return (ideal - amt);
+			return (idealAmt - amt);
 		}
 		return 0;
 	}

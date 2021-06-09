@@ -1,14 +1,14 @@
-package bazaarbot.utils;
+package org.proterra.bazaarbot.utils;
 
 /**
- * @author larsiusprime
+ *
  */
 
-enum EconNoun
+public enum EconNoun
 {
-	Price;
-	Ask;
-	Bid;
-	Trade;
-	Profit;
+	Price,
+	Ask,
+	Bid,
+	Trade,
+	Profit,
 }

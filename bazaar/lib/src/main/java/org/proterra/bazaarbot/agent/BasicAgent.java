@@ -7,6 +7,7 @@ import java.util.Map;
 import org.proterra.bazaarbot.Good;
 import org.proterra.bazaarbot.Market;
 import org.proterra.bazaarbot.Offer;
+import org.proterra.bazaarbot.utils.Point;
 
 /**
  * The most fundamental agent class, and has as little implementation as possible.
@@ -26,7 +27,7 @@ public abstract class BasicAgent
 	public  boolean destroyed;
 
 	Inventory inventory;
-	Map<String, Float> priceBeliefs;
+	Map<String, Point> priceBeliefs;
 	Map<String, List<Float>> observedTradingRange;
 	float profit =0.0f;
 	int lookback = 15;
@@ -37,7 +38,7 @@ public abstract class BasicAgent
 		this.name = data.className;
 		money = data.money;
 		inventory = new Inventory();
-		inventory.fromData(data.inventory);
+		// inventory.fromData(data.inventory);
 		lookback = data.lookBack;
 		priceBeliefs = new HashMap();
 		observedTradingRange = new HashMap();
@@ -50,13 +51,13 @@ public abstract class BasicAgent
 		{
 			 List<Float> trades = new ArrayList<Float>();
 
-			float price = market.getAverageHistoricalPrice(good, _lookback);
-			trades.push(price * 0.5);
-			trades.push(price * 1.5);	//push two fake trades to generate a range
+			float price = market.getAverageHistoricalPrice(good, lookback);
+			trades.add(price * 0.5f);
+			trades.add(price * 1.5f);	//push two fake trades to generate a range
 
 			//set initial price belief & observed trading range
-			_observedTradingRange.set(str, trades);
-			_priceBeliefs.set(str, new Point(price * 0.5, price * 1.5));
+			observedTradingRange.put(good.id, trades);
+			priceBeliefs.put(good.id, new Point(price * 0.5f, price * 1.5f));
 		}
 	}
 
@@ -78,10 +79,8 @@ public abstract class BasicAgent
 
 	public void changeInventory(String goodid, float delta)
 	{
-		inventory.change(good, delta);
+		inventory.change(goodid, delta);
 	}
-
-	/********PRIVATE************/
 
 	private float getInventorySpace()
 	{
@@ -100,7 +99,7 @@ public abstract class BasicAgent
 
 	private float determinePriceOf(String commodity)
 	{
-		 belief:Point = _priceBeliefs.get(commodity_);
+		Point belief = priceBeliefs.get(commodity);
 		return Quick.randomRange(belief.x, belief.y);
 	}
 

@@ -1,36 +1,36 @@
 package org.proterra.bazaarbot;
 
-import bazaarbot.agent.BasicAgent;
-import bazaarbot.agent.BasicAgent.AgentData;
-import bazaarbot.Market;
-import bazaarbot.Offer;
+import java.util.List;
+
+import org.proterra.bazaarbot.agent.AgentData;
+import org.proterra.bazaarbot.agent.BasicAgent;
 
 
 /**
  * An agent that performs the basic logic from the Doran & Parberry article
  * @author
  */
-class Agent extends BasicAgent
+public class Agent extends BasicAgent
 {
-	public static inline var SIGNIFICANT:Float = 0.25;		//25% more or less is "significant"
-	public static inline var SIG_IMBALANCE:Float = 0.33;
-	public static inline var LOW_INVENTORY:Float = 0.1;		//10% of ideal inventory = "LOW"
-	public static inline var HIGH_INVENTORY:Float = 2.0;	//200% of ideal inventory = "HIGH"
+	public static  float SIGNIFICANT = 0.25f;		//25% more or less is "significant"
+	public static float  SIG_IMBALANCE = 0.33f;
+	public static float  LOW_INVENTORY = 0.1f;		//10% of ideal inventory = "LOW"
+	public static float  HIGH_INVENTORY = 2.0f;	//200% of ideal inventory = "HIGH"
 
-	public static inline var MIN_PRICE:Float = 0.01;		//lowest possible price
+	public static float  MIN_PRICE = 0.01f;		//lowest possible price
 
-	public function new(id:Int, data:AgentData)
+	public Agent(int id, AgentData data)
 	{
 		super(id, data);
 	}
 
-	override public function createBid(bazaar:Market, good:String, limit:Float):Offer
+	 public Offer createBid(Market bazaar, String good, float limit)
 	{
-		var bidPrice:Float = determinePriceOf(good);
-		var ideal:Float = determinePurchaseQuantity(bazaar, good);
+		float bidPrice = determinePriceOf(good);
+		float ideal = determinePurchaseQuantity(bazaar, good);
 
 		//can't buy more than limit
-		var quantityToBuy:Float = ideal > limit ? limit : ideal;
+		float quantityToBuy = ideal > limit ? limit : ideal;
 		if (quantityToBuy > 0)
 		{
 			return new Offer(id, good, quantityToBuy, bidPrice);
@@ -38,13 +38,13 @@ class Agent extends BasicAgent
 		return null;
 	}
 
-	override public function createAsk(bazaar:Market, commodity_:String, limit_:Float):Offer
+	 public Offer createAsk(Market bazaar, String commodity, float limit)
 	{
-		var ask_price:Float = determinePriceOf(commodity_);
-		var ideal:Float = determineSaleQuantity(bazaar, commodity_);
+		float ask_price = determinePriceOf(commodity);
+		float ideal = determineSaleQuantity(bazaar, commodity);
 
 		//can't sell less than limit
-		var quantity_to_sell:Float = ideal < limit_ ? limit_ : ideal;
+		float quantity_to_sell = ideal < limit_ ? limit_ : ideal;
 		if (quantity_to_sell > 0)
 		{
 			return new Offer(id, commodity_, quantity_to_sell, ask_price);
@@ -52,10 +52,10 @@ class Agent extends BasicAgent
 		return null;
 	}
 
-	override public function generateOffers(bazaar:Market, commodity:String):Void
+	 public void generateOffers(bazaar:Market, commodity:String):Void
 	{
-		var offer:Offer;
-		var surplus:Float = _inventory.surplus(commodity);
+		 offer:Offer;
+		 surplus = _inventory.surplus(commodity);
 		if (surplus >= 1)
 		{
 			 offer = createAsk(bazaar, commodity, 1);
@@ -66,13 +66,13 @@ class Agent extends BasicAgent
 		}
 		else
 		{
-			var shortage:Float = _inventory.shortage(commodity);
-			var space:Float = _inventory.getEmptySpace();
-			var unit_size:Float = _inventory.getCapacityFor(commodity);
+			 shortage = _inventory.shortage(commodity);
+			 space = _inventory.getEmptySpace();
+			 unit_size = _inventory.getCapacityFor(commodity);
 
 			if (shortage > 0 && space >= unit_size)
 			{
-				var limit:Float = 0;
+				 limit = 0;
 				if ((shortage * unit_size) <= space)	//enough space for ideal order
 				{
 					limit = shortage;
@@ -94,24 +94,24 @@ class Agent extends BasicAgent
 		}
 	}
 
-	override public function updatePriceModel(bazaar:Market, act:String, good:String, success:Bool, unitPrice:Float = 0):Void
+	 public void updatePriceModel(Market bazaar,String act,String good,boolean success,float unitPrice)
 	{
-		var observed_trades:Array<Float>;
+		List<Float> observed_trades;
 
 		if (success)
 		{
 			//Add this to my list of observed trades
-			observed_trades = _observedTradingRange.get(good);
+			observed_trades = observedTradingRange.get(good);
 			observed_trades.push(unitPrice);
 		}
 
-		var public_mean_price:Float = bazaar.getAverageHistoricalPrice(good, 1);
+		 public_mean_price = bazaar.getAverageHistoricalPrice(good, 1);
 
-		var belief:Point = getPriceBelief(good);
-		var mean:Float = (belief.x + belief.y) / 2;
-		var wobble:Float = 0.05;
+		 belief:Point = getPriceBelief(good);
+		 mean = (belief.x + belief.y) / 2;
+		 wobble = 0.05;
 
-		var delta_to_mean:Float = mean - public_mean_price;
+		 delta_to_mean = mean - public_mean_price;
 
 		if (success)
 		{
@@ -134,9 +134,9 @@ class Agent extends BasicAgent
 			belief.x -= delta_to_mean / 2;	//SHIFT towards the mean
 			belief.y -= delta_to_mean / 2;
 
-			var special_case:Bool = false;
-			var stocks:Float = queryInventory(good);
-			var ideal:Float = _inventory.ideal(good);
+			 special_case:Bool = false;
+			 stocks = queryInventory(good);
+			 ideal = _inventory.ideal(good);
 
 			if (act == "buy" && stocks < LOW_INVENTORY * ideal)
 			{
@@ -154,11 +154,11 @@ class Agent extends BasicAgent
 			if (!special_case)
 			{
 				//Don't know what else to do? Check supply vs. demand
-				var asks:Float = bazaar.history.asks.average(good,1);
-				var bids:Float = bazaar.history.bids.average(good,1);
+				 asks = bazaar.history.asks.average(good,1);
+				 bids = bazaar.history.bids.average(good,1);
 
 				//supply_vs_demand: 0=balance, 1=all supply, -1=all demand
-				var supply_vs_demand:Float = (asks - bids) / (asks + bids);
+				 supply_vs_demand = (asks - bids) / (asks + bids);
 
 				//too much supply, or too much demand
 				if (supply_vs_demand > SIG_IMBALANCE || supply_vs_demand < -SIG_IMBALANCE)
@@ -166,7 +166,7 @@ class Agent extends BasicAgent
 					//too much supply: lower price
 					//too much demand: raise price
 
-					var new_mean = public_mean_price * (1 - supply_vs_demand);
+					 new_mean = public_mean_price * (1 - supply_vs_demand);
 					delta_to_mean = mean - new_mean;
 
 					belief.x -= delta_to_mean / 2;	//SHIFT towards anticipated new mean
