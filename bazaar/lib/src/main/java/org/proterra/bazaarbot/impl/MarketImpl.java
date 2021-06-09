@@ -1,63 +1,48 @@
-package bazaarbot;
-import bazaarbot.agent.BasicAgent;
-import bazaarbot.agent.BasicAgent.AgentData;
-import bazaarbot.agent.Logic;
-import bazaarbot.utils.History;
-import bazaarbot.utils.MarketReport;
-import bazaarbot.utils.Quick;
-import bazaarbot.utils.Signal.TypedSignal;
-import bazaarbot.utils.TradeBook;
-import haxe.Json;
-import haxe.xml.Fast;
-import flash.errors.Error;
-import hscript.Interp;
-import hscript.Parser;
-import openfl.Assets;
+package org.proterra.bazaarbot.impl;
 
 /**
  * ...
  * @author
  */
-class Market
+public class Market
 {
-	public var name:String;
+	public String name;
 
 	/**Logs information about all economic activity in this market**/
-	public var history:History;
+	public History history
 
 	/**Signal fired when an agent's money reaches 0 or below**/
-	public var signalBankrupt:TypedSignal<Market->BasicAgent->Void>;
+	public MarketEvent signalBankrupt;
 
-	public function new(name:String)
+	public  Market(String name)
 	{
 		this.name = name;
 
 		history = new History();
-		_book = new TradeBook();
-		_goodTypes = new Array<String>();
-		_agents = new Array<BasicAgent>();
-		_mapGoods = new Map<String, Good>();
-		_mapAgents = new Map<String, AgentData>();
+		book = new TradeBook();
+		goodTypes = new ArrayList<String>();
+		agents = new ArrayList<BasicAgent>();
+		mapGoods = new HashMap<String, Good>();
+		mapAgents = new HashMap<String, AgentData>();
 
-		signalBankrupt = new TypedSignal<Market->BasicAgent->Void>();
 	}
 
-	public function init(data:MarketData):Void
+	public  init(data:MarketData):Void
 	{
 		fromData(data);
 	}
 
-	public function numTypesOfGood():Int
+	public  numTypesOfGood():Int
 	{
 		return _goodTypes.length;
 	}
 
-	public function numAgents():Int
+	public  numAgents():Int
 	{
 		return _agents.length;
 	}
 
-	public function replaceAgent(oldAgent:BasicAgent, newAgent:BasicAgent):Void
+	public  replaceAgent(oldAgent:BasicAgent, newAgent:BasicAgent):Void
 	{
 		newAgent.id = oldAgent.id;
 		_agents[oldAgent.id] = newAgent;
@@ -66,7 +51,7 @@ class Market
 	}
 
 	@:access(bazaarbot.agent.BasicAgent)
-	public function simulate(rounds:Int):Void
+	public  simulate(rounds:Int):Void
 	{
 		for (round in 0...rounds)
 		{
@@ -96,12 +81,12 @@ class Market
 		}
 	}
 
-	public function ask(offer:Offer):Void
+	public  ask(offer:Offer):Void
 	{
 		_book.ask(offer);
 	}
 
-	public function bid(offer:Offer):Void
+	public  bid(offer:Offer):Void
 	{
 		_book.bid(offer);
 	}
@@ -113,7 +98,7 @@ class Market
 	 * @return
 	 */
 
-	public function getAverageHistoricalPrice(good:String, range:Int):Float
+	public  getAverageHistoricalPrice(good:String, range:Int):Float
 	{
 		return history.prices.average(good, range);
 	}
@@ -125,16 +110,16 @@ class Market
 	 * @return
 	 */
 
-	public function getHottestGood(minimum:Float = 1.5, range:Int = 10):String
+	public  getHottestGood(minimum:Float = 1.5, range:Int = 10):String
 	{
-		var best_market:String = "";
-		var best_ratio:Float = Math.NEGATIVE_INFINITY;
+		 best_market:String = "";
+		 best_ratio:Float = Math.NEGATIVE_INFINITY;
 		for (good in _goodTypes)
 		{
-			var asks:Float = history.asks.average(good, range);
-			var bids:Float = history.bids.average(good, range);
+			 asks:Float = history.asks.average(good, range);
+			 bids:Float = history.bids.average(good, range);
 
-			var ratio:Float = 0;
+			 ratio:Float = 0;
 			if (asks == 0 && bids > 0)
 			{
 				//If there are NONE on the market we artificially create a fake supply of 1/2 a unit to avoid the
@@ -161,15 +146,15 @@ class Market
 	 * @return
 	 */
 
-	public function getCheapestGood(range:Int, exclude:Array<String> = null):String
+	public  getCheapestGood(range:Int, exclude:Array<String> = null):String
 	{
-		var best_price:Float = Math.POSITIVE_INFINITY;
-		var best_good:String = "";
+		 best_price:Float = Math.POSITIVE_INFINITY;
+		 best_good:String = "";
 		for (g in _goodTypes)
 		{
 			if (exclude == null || exclude.indexOf(g) == -1)
 			{
-				var price:Float = history.prices.average(g, range);
+				 price:Float = history.prices.average(g, range);
 				if (price < best_price)
 				{
 					best_price = price;
@@ -187,15 +172,15 @@ class Market
 	 * @return
 	 */
 
-	public function getDearestGood(range:Int, exclude:Array<String> = null):String
+	public  getDearestGood(range:Int, exclude:Array<String> = null):String
 	{
-		var best_price:Float = 0;
-		var best_good:String = "";
+		 best_price:Float = 0;
+		 best_good:String = "";
 		for (g in _goodTypes)
 		{
 			if (exclude == null || exclude.indexOf(g) == -1)
 			{
-				var price = history.prices.average(g, range);
+				 price = history.prices.average(g, range);
 				if (price > best_price)
 				{
 					best_price = price;
@@ -211,13 +196,13 @@ class Market
 	 * @param	range
 	 * @return
 	 */
-	public function getMostProfitableAgentClass(range:Int = 10):String
+	public  getMostProfitableAgentClass(range:Int = 10):String
 	{
-		var best:Float = Math.NEGATIVE_INFINITY;
-		var bestClass:String="";
+		 best:Float = Math.NEGATIVE_INFINITY;
+		 bestClass:String="";
 		for (className in _mapAgents.keys())
 		{
-			var val:Float = history.profit.average(className, range);
+			 val:Float = history.profit.average(className, range);
 			if (val > best)
 			{
 				bestClass = className;
@@ -227,14 +212,14 @@ class Market
 		return bestClass;
 	}
 
-	public function getAgentClass(className:String):AgentData
+	public  getAgentClass(className:String):AgentData
 	{
 		return _mapAgents.get(className);
 	}
 
-	public function getAgentClassNames():Array<String>
+	public  getAgentClassNames():Array<String>
 	{
-		var agentData = [];
+		 agentData = [];
 		for (key in _mapAgents.keys())
 		{
 			agentData.push(key);
@@ -242,17 +227,17 @@ class Market
 		return agentData;
 	}
 
-	public function getGoods():Array<String>
+	public  getGoods():Array<String>
 	{
 		return _goodTypes.copy();
 	}
 
-	public function getGoods_unsafe():Array<String>
+	public  getGoods_unsafe():Array<String>
 	{
 		return _goodTypes;
 	}
 
-	public function getGoodEntry(str:String):Good
+	public  getGoodEntry(str:String):Good
 	{
 		if (_mapGoods.exists(str))
 		{
@@ -262,9 +247,9 @@ class Market
 	}
 
 	/********REPORT**********/
-	public function get_marketReport(rounds:Int):MarketReport
+	public  get_marketReport(rounds:Int):MarketReport
 	{
-		var mr:MarketReport = new MarketReport();
+		 mr:MarketReport = new MarketReport();
 		mr.strListGood = "Commodities\n\n";
 		mr.strListGoodPrices = "Price\n\n";
 		mr.strListGoodTrades = "Trades\n\n";
@@ -282,35 +267,35 @@ class Market
 		{
 			mr.strListGood += commodity + "\n";
 
-			var price:Float = history.prices.average(commodity, rounds);
+			 price:Float = history.prices.average(commodity, rounds);
 			mr.strListGoodPrices += Quick.numStr(price, 2) + "\n";
 
-			var asks:Float = history.asks.average(commodity, rounds);
+			 asks:Float = history.asks.average(commodity, rounds);
 			mr.strListGoodAsks += Std.int(asks) + "\n";
 
-			var bids:Float = history.bids.average(commodity, rounds);
+			 bids:Float = history.bids.average(commodity, rounds);
 			mr.strListGoodBids += Std.int(bids) + "\n";
 
-			var trades:Float = history.trades.average(commodity, rounds);
+			 trades:Float = history.trades.average(commodity, rounds);
 			mr.strListGoodTrades += Std.int(trades) + "\n";
 
 			mr.arrStrListInventory.push(commodity + "\n\n");
 		}
 		for (key in _mapAgents.keys())
 		{
-			var inventory:Array<Float> = [];
+			 inventory:Array<Float> = [];
 			for (str in _goodTypes)
 			{
 				inventory.push(0);
 			}
 			mr.strListAgent += key + "\n";
-			var profit:Float = history.profit.average(key, rounds);
+			 profit:Float = history.profit.average(key, rounds);
 			mr.strListAgentProfit += Quick.numStr(profit, 2) + "\n";
 
-			var test_profit:Float = 0;
-			var list = _agents.filter(function(a:BasicAgent):Bool { return a.className == key; } );
-			var count:Int = list.length;
-			var money:Float = 0;
+			 test_profit:Float = 0;
+			 list = _agents.filter((a:BasicAgent):Bool { return a.className == key; } );
+			 count:Int = list.length;
+			 money:Float = 0;
 
 			for (a in list)
 			{
@@ -336,15 +321,15 @@ class Market
 
 	/********PRIVATE*********/
 
-	private var _roundNum:Int = 0;
+	private  _roundNum:Int = 0;
 
-	private var _goodTypes:Array<String>;		//list of string ids for all the legal commodities
-	private var _agents:Array<BasicAgent>;
-	private var _book:TradeBook;
-	private var _mapAgents:Map<String, AgentData>;
-	private var _mapGoods:Map<String, Good>;
+	private  _goodTypes:Array<String>;		//list of string ids for all the legal commodities
+	private  _agents:Array<BasicAgent>;
+	private  _book:TradeBook;
+	private  _mapAgents:Map<String, AgentData>;
+	private  _mapGoods:Map<String, Good>;
 
-	private function fromData(data:MarketData)
+	private  fromData(data:MarketData)
 	{
 		//Create commodity index
 		for (g in data.goods)
@@ -372,7 +357,7 @@ class Market
 		//Make the agent list
 		_agents = [];
 
-		var agentIndex = 0;
+		 agentIndex = 0;
 		for (agent in data.agents)
 		{
 			agent.id = agentIndex;
@@ -383,10 +368,10 @@ class Market
 
 	}
 
-	private function resolveOffers(good:String = ""):Void
+	private  resolveOffers(good:String = ""):Void
 	{
-		var bids:Array<Offer> = _book.bids.get(good);
-		var asks:Array<Offer> = _book.asks.get(good);
+		 bids:Array<Offer> = _book.bids.get(good);
+		 asks:Array<Offer> = _book.asks.get(good);
 
 		bids = Quick.shuffle(bids);
 		asks = Quick.shuffle(asks);
@@ -394,14 +379,14 @@ class Market
 		bids.sort(Quick.sortDecreasingPrice);		//highest buying price first
 		asks.sort(Quick.sortIncreasingPrice);		//lowest selling price first
 
-		var successfulTrades:Int = 0;		//# of successful trades this round
-		var moneyTraded:Float = 0;			//amount of money traded this round
-		var unitsTraded:Float = 0;			//amount of goods traded this round
-		var avgPrice:Float = 0;				//avg clearing price this round
-		var numAsks:Float = 0;
-		var numBids:Float = 0;
+		 successfulTrades:Int = 0;		//# of successful trades this round
+		 moneyTraded:Float = 0;			//amount of money traded this round
+		 unitsTraded:Float = 0;			//amount of goods traded this round
+		 avgPrice:Float = 0;				//avg clearing price this round
+		 numAsks:Float = 0;
+		 numBids:Float = 0;
 
-		var failsafe:Int = 0;
+		 failsafe:Int = 0;
 
 		for (i in 0...bids.length)
 		{
@@ -416,11 +401,11 @@ class Market
 		//march through and try to clear orders
 		while (bids.length > 0 && asks.length > 0)		//while both books are non-empty
 		{
-			var buyer:Offer = bids[0];
-			var seller:Offer = asks[0];
+			 buyer:Offer = bids[0];
+			 seller:Offer = asks[0];
 
-			var quantity_traded = Math.min(seller.units, buyer.units);
-			var clearing_price  = Quick.avgf(seller.unit_price, buyer.unit_price);
+			 quantity_traded = Math.min(seller.units, buyer.units);
+			 clearing_price  = Quick.avgf(seller.unit_price, buyer.unit_price);
 
 			if (quantity_traded > 0)
 			{
@@ -432,8 +417,8 @@ class Market
 				transferMoney(quantity_traded * clearing_price, seller.agent_id, buyer.agent_id);
 
 				//update agent price beliefs based on successful transaction
-				var buyer_a:BasicAgent = _agents[buyer.agent_id];
-				var seller_a:BasicAgent = _agents[seller.agent_id];
+				 buyer_a:BasicAgent = _agents[buyer.agent_id];
+				 seller_a:BasicAgent = _agents[seller.agent_id];
 				buyer_a.updatePriceModel(this, "buy", good, true, clearing_price);
 				seller_a.updatePriceModel(this, "sell", good, true, clearing_price);
 
@@ -466,15 +451,15 @@ class Market
 		//update price belief models based on unsuccessful transaction
 		while (bids.length > 0)
 		{
-			var buyer:Offer = bids[0];
-			var buyer_a:BasicAgent = _agents[buyer.agent_id];
+			 buyer:Offer = bids[0];
+			 buyer_a:BasicAgent = _agents[buyer.agent_id];
 			buyer_a.updatePriceModel(this,"buy",good, false);
 			bids.splice(0, 1);
 		}
 		while (asks.length > 0)
 		{
-			var seller:Offer = asks[0];
-			var seller_a:BasicAgent = _agents[seller.agent_id];
+			 seller:Offer = asks[0];
+			 seller_a:BasicAgent = _agents[seller.agent_id];
 			seller_a.updatePriceModel(this,"sell",good, false);
 			asks.splice(0, 1);
 		}
@@ -499,14 +484,14 @@ class Market
 
 		_agents.sort(Quick.sortAgentAlpha);
 
-		var curr_class:String = "";
-		var last_class:String = "";
-		var list:Array<Float> = null;
-		var avg_profit:Float = 0;
+		 curr_class:String = "";
+		 last_class:String = "";
+		 list:Array<Float> = null;
+		 avg_profit:Float = 0;
 
 		for (i in 0..._agents.length)
 		{
-			var a:BasicAgent = _agents[i];		//get current agent
+			 a:BasicAgent = _agents[i];		//get current agent
 			curr_class = a.className;			//check its class
 			if (curr_class != last_class)		//new class?
 			{
@@ -529,18 +514,18 @@ class Market
 
 	}
 
-	private function transferGood(good:String, units:Float, seller_id:Int, buyer_id:Int):Void
+	private  transferGood(good:String, units:Float, seller_id:Int, buyer_id:Int):Void
 	{
-		var seller:BasicAgent = _agents[seller_id];
-		var  buyer:BasicAgent = _agents[buyer_id];
+		 seller:BasicAgent = _agents[seller_id];
+		  buyer:BasicAgent = _agents[buyer_id];
 		seller.changeInventory(good, -units);
 		 buyer.changeInventory(good,  units);
 	}
 
-	private function transferMoney(amount:Float, seller_id:Int, buyer_id:Int):Void
+	private  transferMoney(amount:Float, seller_id:Int, buyer_id:Int):Void
 	{
-		var seller:BasicAgent = _agents[seller_id];
-		var  buyer:BasicAgent = _agents[buyer_id];
+		 seller:BasicAgent = _agents[seller_id];
+		  buyer:BasicAgent = _agents[buyer_id];
 		seller.money += amount;
 		 buyer.money -= amount;
 	}

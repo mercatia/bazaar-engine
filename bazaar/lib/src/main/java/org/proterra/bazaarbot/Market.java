@@ -8,7 +8,10 @@ public interface Market {
     List<Good> getGoods();
     void onBankruptcy(Economy economy);
     void simulate(int rounds);
-    float getAverageHistoricalPrice(Good good, int lookback);
+    float getAverageHistoricalPrice(String goodid, int lookback);
+    
+    void addMarketEventListener(MarketListener listener);
+
     
 
 }

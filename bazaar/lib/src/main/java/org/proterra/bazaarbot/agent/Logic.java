@@ -9,7 +9,6 @@ import org.proterra.bazaarbot.Market;
  */
 public abstract class Logic
 {
-	private boolean init = false;
 
 	public Logic(String data)
 	{

@@ -26,7 +26,7 @@ public class Agent extends BasicAgent
 
 	 public Offer createBid(Market bazaar, String good, float limit)
 	{
-		float bidPrice = determinePriceOf(good);
+		float bidPrice = super.determinePriceOf(good);
 		float ideal = determinePurchaseQuantity(bazaar, good);
 
 		//can't buy more than limit

@@ -67,7 +67,10 @@ public class Quick {
 		}
 		return value;
 	}
-
+	
+	public static float positionInRange(float value, float min, float max) {
+		return positionInRange(value,min,max,true);
+	}
 	public static int randomInteger(int min, int max) {
 		return (int) ((Math.random() * (max - min)) + min);
 	}
