@@ -36,17 +36,12 @@ public class MarketImpl implements Market
 		this.name = name;
 
 		history = new History();
-		TradeBook book = new TradeBook();
-		List<String> goodTypes = new ArrayList<String>();
-		List<BasicAgent> agents = new ArrayList<BasicAgent>();
-		Map<String,Good> mapGoods = new HashMap<String, Good>();
-		Map<String,AgentData> mapAgents = new HashMap<String, AgentData>();
+		// TradeBook book = new TradeBook();
+		// List<String> goodTypes = new ArrayList<String>();
+		// List<BasicAgent> agents = new ArrayList<BasicAgent>();
+		// Map<String,Good> mapGoods = new HashMap<String, Good>();
+		// Map<String,AgentData> mapAgents = new HashMap<String, AgentData>();
 
-	}
-
-	public void init(MarketData data)
-	{
-		fromData(data);
 	}
 
 	public int numTypesOfGood()
@@ -75,21 +70,22 @@ public class MarketImpl implements Market
 				agent.moneyLastRound = agent.money;
 				agent.simulate(this);
 
-				for (String commodity : _goodTypes)
+				for (Good commodity : _goodTypes)
 				{
-					agent.generateOffers(this, commodity);
+					agent.generateOffers(this, commodity.id);
 				}
 			}
 
-			for (String commodity : _goodTypes)
+			for (Good commodity : _goodTypes)
 			{
-				resolveOffers(commodity);
+				resolveOffers(commodity.id);
 			}
+
 			for (BasicAgent agent :_agents)
 			{
 				if (agent.money <= 0)
 				{
-					signalBankrupt.dispatch(this, agent);
+					this.fireEvent(new MarketEvent(this));
 				}
 			}
 			_roundNum++;
@@ -129,10 +125,10 @@ public class MarketImpl implements Market
 	{
 		String best_market = "";
 		float best_ratio = Float.NEGATIVE_INFINITY;
-		for (String good : _goodTypes)
+		for (Good good : _goodTypes)
 		{
-			float asks = history.asks.average(good, range);
-			float bids = history.bids.average(good, range);
+			float asks = history.asks.average(good.id, range);
+			float bids = history.bids.average(good.id, range);
 
 			float ratio = 0;
 			if (asks == 0 && bids > 0)
@@ -148,7 +144,7 @@ public class MarketImpl implements Market
 			if (ratio > minimum && ratio > best_ratio)
 			{
 				best_ratio = ratio;
-				best_market = good;
+				best_market = good.id;
 			}
 		}
 		return best_market;
@@ -165,15 +161,15 @@ public class MarketImpl implements Market
 	{
 		float best_price = Float.POSITIVE_INFINITY;
 		String best_good = "";
-		for (String g : _goodTypes)
+		for (Good g : _goodTypes)
 		{
 			if (exclude == null || exclude.indexOf(g) == -1)
 			{
-				float price = history.prices.average(g, range);
+				float price = history.prices.average(g.id, range);
 				if (price < best_price)
 				{
 					best_price = price;
-					best_good = g;
+					best_good = g.id;
 				}
 			}
 		}
@@ -186,20 +182,19 @@ public class MarketImpl implements Market
 	 * @param	exclude goods to exclude
 	 * @return
 	 */
-
 	public String getDearestGood(int range, List<String> exclude)
 	{
 		float best_price = 0;
 		String best_good = "";
-		for (String g : _goodTypes)
+		for (Good g : _goodTypes)
 		{
 			if (exclude == null || exclude.indexOf(g) == -1)
 			{
-				float price = history.prices.average(g, range);
+				float price = history.prices.average(g.id, range);
 				if (price > best_price)
 				{
 					best_price = price;
-					best_good = g;
+					best_good = g.id;
 				}
 			}
 		}
@@ -242,7 +237,7 @@ public class MarketImpl implements Market
 		return agentData;
 	}
 
-	public List<String> getGoods()
+	public List<Good> getGoods()
 	{
 		return _goodTypes;
 	}
@@ -256,139 +251,159 @@ public class MarketImpl implements Market
 		return null;
 	}
 
-	/********REPORT**********/
-	public MarketReport get_marketReport(int rounds)
-	{
-		MarketReport mr = new MarketReport();
-		mr.strListGood = "Commodities\n\n";
-		mr.strListGoodPrices = "Price\n\n";
-		mr.strListGoodTrades = "Trades\n\n";
-		mr.strListGoodAsks = "Supply\n\n";
-		mr.strListGoodBids = "Demand\n\n";
+	
+	// public MarketReport get_marketReport(int rounds)
+	// {
+	// 	MarketReport mr = new MarketReport();
+	// 	mr.strListGood = "Commodities\n\n";
+	// 	mr.strListGoodPrices = "Price\n\n";
+	// 	mr.strListGoodTrades = "Trades\n\n";
+	// 	mr.strListGoodAsks = "Supply\n\n";
+	// 	mr.strListGoodBids = "Demand\n\n";
 
-		mr.strListAgent = "Classes\n\n";
-		mr.strListAgentCount = "Count\n\n";
-		mr.strListAgentProfit = "Profit\n\n";
-		mr.strListAgentMoney = "Money\n\n";
+	// 	mr.strListAgent = "Classes\n\n";
+	// 	mr.strListAgentCount = "Count\n\n";
+	// 	mr.strListAgentProfit = "Profit\n\n";
+	// 	mr.strListAgentMoney = "Money\n\n";
 
-		mr.arrStrListInventory = new ArrayList<String>();
+	// 	mr.arrStrListInventory = new ArrayList<String>();
 
-		for (String commodity : _goodTypes)
-		{
-			mr.strListGood += commodity + "\n";
+	// 	for (String commodity : _goodTypes)
+	// 	{
+	// 		mr.strListGood += commodity + "\n";
 
-			float price = history.prices.average(commodity, rounds);
-			mr.strListGoodPrices += Quick.numStr(price, 2) + "\n";
+	// 		float price = history.prices.average(commodity, rounds);
+	// 		mr.strListGoodPrices += Quick.numStr(price, 2) + "\n";
 
-			float asks = history.asks.average(commodity, rounds);
-			mr.strListGoodAsks += asks + "\n";
+	// 		float asks = history.asks.average(commodity, rounds);
+	// 		mr.strListGoodAsks += asks + "\n";
 
-			float bids = history.bids.average(commodity, rounds);
-			mr.strListGoodBids += bids + "\n";
+	// 		float bids = history.bids.average(commodity, rounds);
+	// 		mr.strListGoodBids += bids + "\n";
 
-			float trades = history.trades.average(commodity, rounds);
-			mr.strListGoodTrades += trades + "\n";
+	// 		float trades = history.trades.average(commodity, rounds);
+	// 		mr.strListGoodTrades += trades + "\n";
 
-			mr.arrStrListInventory.add(commodity + "\n\n");
-		}
+	// 		mr.arrStrListInventory.add(commodity + "\n\n");
+	// 	}
 
-		for (String key : _mapAgents.keySet())
-		{
-			List<Float> inventory = new ArrayList<Float>();
-			for (String str : _goodTypes)
-			{
-				inventory.push(0);
-			}
-			mr.strListAgent += key + "\n";
-			float profit = history.profit.average(key, rounds);
-			mr.strListAgentProfit += Quick.numStr(profit, 2) + "\n";
+	// 	for (String key : _mapAgents.keySet())
+	// 	{
+	// 		List<Float> inventory = new ArrayList<Float>();
+	// 		for (String str : _goodTypes)
+	// 		{
+	// 			inventory.push(0);
+	// 		}
+	// 		mr.strListAgent += key + "\n";
+	// 		float profit = history.profit.average(key, rounds);
+	// 		mr.strListAgentProfit += Quick.numStr(profit, 2) + "\n";
 
-			float test_profit = 0;
-			 list = _agents.filter((a:BasicAgent):Bool { return a.className == key; } );
-			int count = list.length;
-			float money = 0;
+	// 		float test_profit = 0;
+	// 		 list = _agents.filter((a:BasicAgent):Bool { return a.className == key; } );
+	// 		int count = list.length;
+	// 		float money = 0;
 
-			for (a in list)
-			{
-				money += a.money;
-				for (lic in 0..._goodTypes.length)
-				{
-					inventory[lic] += a.queryInventory(_goodTypes[lic]);
-				}
-			}
+	// 		for (a in list)
+	// 		{
+	// 			money += a.money;
+	// 			for (lic in 0..._goodTypes.length)
+	// 			{
+	// 				inventory[lic] += a.queryInventory(_goodTypes[lic]);
+	// 			}
+	// 		}
 
-			money /= list.length;
-			for (lic in 0..._goodTypes.length)
-			{
-				inventory[lic] /= list.length;
-				mr.arrStrListInventory[lic] += Quick.numStr(inventory[lic],1) + "\n";
-			}
+	// 		money /= list.length;
+	// 		for (lic in 0..._goodTypes.length)
+	// 		{
+	// 			inventory[lic] /= list.length;
+	// 			mr.arrStrListInventory[lic] += Quick.numStr(inventory[lic],1) + "\n";
+	// 		}
 
-			mr.strListAgentCount += Quick.numStr(count, 0) + "\n";
-			mr.strListAgentMoney += Quick.numStr(money, 0) + "\n";
-		}
-		return mr;
-	}
+	// 		mr.strListAgentCount += Quick.numStr(count, 0) + "\n";
+	// 		mr.strListAgentMoney += Quick.numStr(money, 0) + "\n";
+	// 	}
+	// 	return mr;
+	// }
 
 	/********PRIVATE*********/
 
 	private int _roundNum = 0;
 
-	private List<String> _goodTypes;		//list of string ids for all the legal commodities
+	private List<Good> _goodTypes;		//list of string ids for all the legal commodities
 	private List<BasicAgent> _agents;
 	private TradeBook _book;
 	private Map<String, AgentData> _mapAgents;
 	private Map<String, Good> _mapGoods;
 
-	private void fromData(MarketData data)
-	{
-		//Create commodity index
-		for (Good g : data.goods)
-		{
-			_goodTypes.add(g.id);
-			_mapGoods.put(g.id, new Good(g.id, g.size));
+	// private void fromData(MarketData data)
+	// {
+	// 	//Create commodity index
+	// 	for (Good g : data.goods)
+	// 	{
+	// 		_goodTypes.add(g.id);
+	// 		_mapGoods.put(g.id, new Good(g.id, g.size));
 
-			history.register(g.id);
-			history.prices.put(g.id, 1.0);	//start the bidding at $1!
-			history.asks.put(g.id, 1.0);	//start history charts with 1 fake buy/sell bid
-			history.bids.put(g.id, 1.0);
-			history.trades.add(g.id, 1.0);
+	// 		history.register(g.id);
+	// 		history.prices.put(g.id, 1.0);	//start the bidding at $1!
+	// 		history.asks.put(g.id, 1.0);	//start history charts with 1 fake buy/sell bid
+	// 		history.bids.put(g.id, 1.0);
+	// 		history.trades.add(g.id, 1.0);
 
-			_book.register(g.id);
-		}
+	// 		_book.register(g.id);
+	// 	}
 
-		_mapAgents = new Map<String, AgentData>();
+	// 	_mapAgents = new Map<String, AgentData>();
 
-		for (aData in data.agentTypes)
-		{
-			_mapAgents.set(aData.className, aData);
-			history.profit.register(aData.className);
-		}
+	// 	for (aData in data.agentTypes)
+	// 	{
+	// 		_mapAgents.set(aData.className, aData);
+	// 		history.profit.register(aData.className);
+	// 	}
 
-		//Make the agent list
-		_agents = [];
+	// 	//Make the agent list
+	// 	_agents = [];
 
-		 agentIndex = 0;
-		for (agent in data.agents)
-		{
-			agent.id = agentIndex;
-			agent.init(this);
-			_agents.push(agent);
-			agentIndex++;
-		}
+	// 	 agentIndex = 0;
+	// 	for (agent in data.agents)
+	// 	{
+	// 		agent.id = agentIndex;
+	// 		agent.init(this);
+	// 		_agents.push(agent);
+	// 		agentIndex++;
+	// 	}
 
-	}
+	// }
 
 	private void resolveOffers(String good)
 	{
-		List<Offer> bids = _book.bids.get(good);
-		List<Offer> asks = _book.asks.get(good);
+		List<Offer> bids = _book.getBids(good);
+		List<Offer> asks = _book.getAsks(good);
 
-		bids = Quick.shuffle(bids);
-		asks = Quick.shuffle(asks);
+		// bids = Quick.shuffle(bids);
+		// asks = Quick.shuffle(asks);
 
-		bids.sort(Quick.sortDecreasingPrice);		//highest buying price first
-		asks.sort(Quick.sortIncreasingPrice);		//lowest selling price first
+		bids.sort((Offer a, Offer b) -> { 
+			if (a.getUnitPrice() < b.getUnitPrice()) {
+				return -1;
+			} else if (a.getUnitPrice() > b.getUnitPrice()) {
+				return 1;
+			} else {
+				return 0;
+			}
+
+		 });		//highest buying price first
+		asks.sort(
+			(Offer a, Offer b) -> { 
+				if (a.getUnitPrice() < b.getUnitPrice()) {
+					return 1;
+				} else if (a.getUnitPrice() > b.getUnitPrice()) {
+					return -1;
+				} else {
+					return 0;
+				}
+	
+			 }
+		);		//lowest selling price first
 
 		int successfulTrades = 0;		//# of successful trades this round
 		float moneyTraded = 0;			//amount of money traded this round
@@ -399,24 +414,24 @@ public class MarketImpl implements Market
 
 		int failsafe = 0;
 
-		for (i in 0...bids.length)
+		for (Offer o : bids)
 		{
-			numBids += bids[i].units;
+			numBids += o.units;
 		}
 
-		for (i in 0...asks.length)
+		for (Offer o : asks)
 		{
-			numAsks += asks[i].units;
+			numAsks += o.units;
 		}
 
 		//march through and try to clear orders
-		while (bids.length > 0 && asks.length > 0)		//while both books are non-empty
+		while (bids.size() > 0 && asks.size() > 0)		//while both books are non-empty
 		{
-			 buyer:Offer = bids[0];
-			 seller:Offer = asks[0];
+			Offer buyer = bids.get(0);
+			Offer seller = asks.get(0);
 
-			 quantity_traded = Math.min(seller.units, buyer.units);
-			 clearing_price  = Quick.avgf(seller.unit_price, buyer.unit_price);
+			float quantity_traded = Math.min(seller.units, buyer.units);
+			float clearing_price  = Quick.avgf(seller.getUnitPrice(), buyer.getUnitPrice());
 
 			if (quantity_traded > 0)
 			{
@@ -428,8 +443,8 @@ public class MarketImpl implements Market
 				transferMoney(quantity_traded * clearing_price, seller.agent_id, buyer.agent_id);
 
 				//update agent price beliefs based on successful transaction
-				 buyer_a:BasicAgent = _agents[buyer.agent_id];
-				 seller_a:BasicAgent = _agents[seller.agent_id];
+				BasicAgent buyer_a = _agents.get(buyer.agent_id);
+				BasicAgent seller_a = _agents.get(seller.agent_id);
 				buyer_a.updatePriceModel(this, "buy", good, true, clearing_price);
 				seller_a.updatePriceModel(this, "sell", good, true, clearing_price);
 
@@ -441,38 +456,34 @@ public class MarketImpl implements Market
 
 			if (seller.units == 0)		//seller is out of offered good
 			{
-				asks.splice(0, 1);		//remove ask
+				asks.remove(0);
 				failsafe = 0;
 			}
 			if (buyer.units == 0)		//buyer is out of offered good
 			{
-				bids.splice(0, 1);		//remove bid
+				bids.remove(0);		//remove bid
 				failsafe = 0;
 			}
 
 			failsafe++;
 
-			if (failsafe > 1000)
+			if (failsafe > 1000) // not good
 			{
-				trace("BOINK!");
+				throw new RuntimeException("BOINK!");
 			}
 		}
 
 		//reject all remaining offers,
 		//update price belief models based on unsuccessful transaction
-		while (bids.length > 0)
-		{
-			 buyer:Offer = bids[0];
-			 buyer_a:BasicAgent = _agents[buyer.agent_id];
+		for (Offer b : bids) 
+		{			
+			BasicAgent buyer_a = _agents.get(b.agent_id);;
 			buyer_a.updatePriceModel(this,"buy",good, false);
-			bids.splice(0, 1);
 		}
-		while (asks.length > 0)
+		for (Offer s : asks)
 		{
-			Offer seller:Offer = asks[0];
-			BasicAgent seller_a:BasicAgent = _agents[seller.agent_id];
-			seller_a.updatePriceModel(this,"sell",good, false);
-			asks.splice(0, 1);
+			BasicAgent seller_a = _agents.get(s.agent_id);
+			seller_a.updatePriceModel(this,"sell",good, false);	
 		}
 
 		//update history
@@ -483,7 +494,7 @@ public class MarketImpl implements Market
 
 		if (unitsTraded > 0)
 		{
-			avgPrice = moneyTraded / cast(unitsTraded, Float);
+			avgPrice = moneyTraded / unitsTraded;
 			history.prices.add(good, avgPrice);
 		}
 		else
@@ -493,50 +504,50 @@ public class MarketImpl implements Market
 			avgPrice = history.prices.average(good,1);
 		}
 
-		_agents.sort(Quick.sortAgentAlpha);
+	
 
 		String curr_class = "";
 		String last_class = "";
 		List<Float> list = null;
 		float avg_profit = 0;
 
-		for (i in 0..._agents.length)
-		{
-			BasicAgent  a = _agents[i];		//get current agent
-			curr_class = a.className;			//check its class
-			if (curr_class != last_class)		//new class?
-			{
-				if (list != null)				//do we have a list built up?
-				{
-					//log last class' profit
-					history.profit.add(last_class, Quick.listAvgf(list));
-				}
-				list = [];		//make a new list
-				last_class = curr_class;
-			}
-			list.push(a.profit);			//push profit onto list
-		}
+		// for (BasicAgent a: _agents)
+		// {
+		// 		//get current agent
+		// 	curr_class = a.lassName;			//check its class
+		// 	if (curr_class != last_class)		//new class?
+		// 	{
+		// 		if (list != null)				//do we have a list built up?
+		// 		{
+		// 			//log last class' profit
+		// 			history.profit.add(last_class, Quick.listAvgf(list));
+		// 		}
+		// 		list = [];		//make a new list
+		// 		last_class = curr_class;
+		// 	}
+		// 	list.push(a.profit);			//push profit onto list
+		// }
 
 		//add the last class too
-		history.profit.add(last_class, Quick.listAvgf(list));
+		// history.profit.add(last_class, Quick.listAvgf(list));
 
 		//sort by id so everything works again
-		_agents.sort(Quick.sortAgentId);
+		// _agents.sort(Quick.sortAgentId);
 
 	}
 
-	private  void transferGood(String good, float units,int seller_id,int buyer_id)
+	private void transferGood(String good, float units,int seller_id,int buyer_id)
 	{
-		BasicAgent seller = _agents[seller_id];
-		BasicAgent  buyer = _agents[buyer_id];
+		BasicAgent seller = _agents.get(seller_id);
+		BasicAgent  buyer = _agents.get(buyer_id);
 		seller.changeInventory(good, -units);
 		 buyer.changeInventory(good,  units);
 	}
 
 	private void transferMoney(float amount,int seller_id,int buyer_id)
 	{
-		BasicAgent seller = _agents[seller_id];
-		BasicAgent  buyer = _agents[buyer_id];
+		BasicAgent seller = _agents.get(seller_id);
+		BasicAgent  buyer = _agents.get(buyer_id);
 		seller.money += amount;
 		 buyer.money -= amount;
 	}
@@ -545,12 +556,6 @@ public class MarketImpl implements Market
 	public String getName() {
 		// TODO Auto-generated method stub
 		return null;
-	}
-
-	@Override
-	public void onBankruptcy(Economy economy) {
-		// TODO Auto-generated method stub
-		
 	}
 
 	@Override

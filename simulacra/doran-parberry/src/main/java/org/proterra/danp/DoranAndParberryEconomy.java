@@ -10,10 +10,11 @@ import org.proterra.danp.jobs.LogicBlacksmith;
 class DoranAndParberryEconomy extends Economy
 {
 
+	Market market;
 	public DoranAndParberryEconomy()
 	{
 		super();
-		var market = new Market("default");
+		market = new Market("default");
 		// market.init(MarketData.fromJSON(Json.parse(Assets.getText("assets/settings.json")), getAgent));
 		// addMarket(market);
 	}

@@ -7,7 +7,7 @@ import org.proterra.bazaar.*;
  * ...
  * @author larsiusprime
  */
-class LogicGeneric extends Logic
+public abstract class LogicGeneric extends Logic
 {
 
 	public LogicGeneric()

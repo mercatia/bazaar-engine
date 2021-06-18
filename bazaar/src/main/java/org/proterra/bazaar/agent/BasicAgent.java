@@ -66,8 +66,9 @@ public abstract class BasicAgent
 
     public abstract void generateOffers(Market market, String good);
 
-    public abstract void updatePriceModel(Market market, String act, String good, boolean success, float unitPrice);
+    public abstract void updatePriceModel(Market market, String act, String goodid, boolean success, float clearing_price);
 
+    public abstract void updatePriceModel(Market market, String act, String goodid, boolean success);
     public abstract Offer createBid(Market market, String good, float limit);
 
     public abstract Offer createAsk(Market market, String commodity, float limit);

@@ -7,8 +7,13 @@ public class Offer
 {
 	public String good;	//the thing offered
 	public float units;			//how many units
-	public float unit_price;	//price per unit
+	private float unit_price;	//price per unit
 	public int agent_id;		//who offered this
+
+	public float getUnitPrice(){
+		return this.unit_price;
+	}
+
 
 	public Offer(int agent_id,String commodity,float units,float unit_price)
 	{

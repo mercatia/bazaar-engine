@@ -80,6 +80,11 @@ public class Agent extends BasicAgent {
 		}
 	}
 
+	@Override
+	public void updatePriceModel(Market market, String act, String goodid, boolean success) {
+		updatePriceModel(market,act,goodid,success,0.0f);
+	}
+
 	public void updatePriceModel(Market bazaar, String act, String good, boolean success, float unitPrice) {
 		List<Float> observed_trades;
 
@@ -165,4 +170,6 @@ public class Agent extends BasicAgent {
 		// TODO Auto-generated method stub
 
 	}
+
+
 }

@@ -4,14 +4,13 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.proterra.bazaar.agent.BasicAgent;
+import org.proterra.events.EventsListener;
 
 /**
- * ...
- * 
- * @author larsiusprime
+ *
  */
 
-public abstract class Economy {
+public abstract class Economy implements MarketListener {
 	private Map<String, Market> markets;
 
 	public Economy() {
@@ -23,7 +22,7 @@ public abstract class Economy {
 		if (!markets.containsKey(m.getName()))
 		{
 			markets.put(m.getName(),m);
-			m.onBankruptcy(this);
+			m.addListener(this);
 		}
 	}
 

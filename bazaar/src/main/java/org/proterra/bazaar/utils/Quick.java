@@ -98,21 +98,21 @@ public class Quick {
 		return 0;
 	}
 
-	public static int sortDecreasingPrice(Offer a, Offer b) {
-		// Decreasing means: highest first
-		if (a.unit_price < b.unit_price)
-			return 1;
-		if (a.unit_price > b.unit_price)
-			return -1;
-		return 0;
-	}
+	// public static int sortDecreasingPrice(Offer a, Offer b) {
+	// 	// Decreasing means: highest first
+	// 	if (a.unit_price < b.unit_price)
+	// 		return 1;
+	// 	if (a.unit_price > b.unit_price)
+	// 		return -1;
+	// 	return 0;
+	// }
 
-	public static int sortIncreasingPrice(Offer a, Offer b) {
-		// Increasing means: lowest first
-		if (a.unit_price > b.unit_price)
-			return 1;
-		if (a.unit_price < b.unit_price)
-			return -1;
-		return 0;
-	}
+	// public static int sortIncreasingPrice(Offer a, Offer b) {
+	// 	// Increasing means: lowest first
+	// 	if (a.unit_price > b.unit_price)
+	// 		return 1;
+	// 	if (a.unit_price < b.unit_price)
+	// 		return -1;
+	// 	return 0;
+	// }
 }
