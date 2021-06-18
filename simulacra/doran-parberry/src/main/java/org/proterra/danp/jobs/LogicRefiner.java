@@ -1,6 +1,5 @@
-package jobs;
-import bazaarbot.agent.BasicAgent;
-import bazaarbot.Market;
+package org.proterra.danp.jobs;
+
 /**
  * ...
  * @author larsiusprime
@@ -8,20 +7,19 @@ import bazaarbot.Market;
 class LogicRefiner extends LogicGeneric
 {
 
-	public function new(?data:Dynamic)
-	{
-		super(data);
+	public LogicRefiner(){
+		super();
 	}
 
-	override public function perform(agent:BasicAgent, market:Market)
+	 public void perform(BasicAgent agent,Market market)
 	{
-		var food = agent.queryInventory("food");
-		var tools = agent.queryInventory("tools");
-		var ore = agent.queryInventory("ore");
+		float food = agent.queryInventory("food");
+		float tools = agent.queryInventory("tools");
+		float ore = agent.queryInventory("ore");
 
-		var has_food = food >= 1;
-		var has_tools = tools >= 1;
-		var has_ore = ore >= 1;
+		boolean has_food = food >= 1;
+		boolean has_tools = tools >= 1;
+		boolean has_ore = ore >= 1;
 
 		if (has_food && has_ore)
 		{

@@ -1,27 +1,23 @@
-package jobs;
-import bazaarbot.Market;
-import bazaarbot.agent.BasicAgent;
-import bazaarbot.agent.Logic;
+package org.proterra.danp.jobs;
 
 /**
- * ...
- * @author larsiusprime
+
  */
-class LogicBlacksmith extends LogicGeneric
+public class LogicBlacksmith extends LogicGeneric
 {
 
-	public function new(?data)
+	public LogicBlacksmith()
 	{
-		super(data);
+		super();
 	}
 
-	override public function perform(agent:BasicAgent, market:Market)
+	 public void perform(BasicAgent agent, Market market)
 	{
-		var food = agent.queryInventory("food");
-		var metal = agent.queryInventory("metal");
+		float food = agent.queryInventory("food");
+		float metal = agent.queryInventory("metal");
 
-		var has_food = food >= 1;
-		var has_metal = metal >= 1;
+		boolean has_food = food >= 1;
+		boolean has_metal = metal >= 1;
 
 		if (has_food && has_metal)
 		{

@@ -1,19 +1,7 @@
 package org.proterra.danp;
 
-import bazaarbot.Agent;
-import bazaarbot.agent.BasicAgent;
-import bazaarbot.agent.Logic;
-import bazaarbot.agent.LogicScript;
-import bazaarbot.Economy;
-import bazaarbot.Market;
-import bazaarbot.MarketData;
-import haxe.Json;
-import jobs.LogicBlacksmith;
-import jobs.LogicFarmer;
-import jobs.LogicMiner;
-import jobs.LogicRefiner;
-import jobs.LogicWoodcutter;
-import openfl.Assets;
+import org.proterra.bazaar.*;
+import org.proterra.danp.jobs.LogicBlacksmith;
 
 /**
  * ...
@@ -22,38 +10,38 @@ import openfl.Assets;
 class DoranAndParberryEconomy extends Economy
 {
 
-	public function new()
+	public DoranAndParberryEconomy()
 	{
 		super();
 		var market = new Market("default");
-		market.init(MarketData.fromJSON(Json.parse(Assets.getText("assets/settings.json")), getAgent));
-		addMarket(market);
+		// market.init(MarketData.fromJSON(Json.parse(Assets.getText("assets/settings.json")), getAgent));
+		// addMarket(market);
 	}
 
-	override function onBankruptcy(m:Market, a:BasicAgent):Void
-	{
-		replaceAgent(m, a);
-	}
+	// override  onBankruptcy(m:Market, a:BasicAgent):Void
+	// {
+	// 	replaceAgent(m, a);
+	// }
 
-	private function replaceAgent(market:Market, agent:BasicAgent):Void
+	private void replaceAgent(Market market, BasicAgent  agent)
 	{
-		var bestClass:String = market.getMostProfitableAgentClass();
+		String bestClass = market.getMostProfitableAgentClass();
 
 		//Special case to deal with very high demand-to-supply ratios
 		//This will make them favor entering an underserved market over
 		//Just picking the most profitable class
-		var bestGood:String = market.getHottestGood();
+		String bestGood = market.getHottestGood();
 
 		if (bestGood != "")
 		{
-			var bestGoodClass:String = getAgentClassThatMakesMost(bestGood);
+			String bestGoodClass = getAgentClassThatMakesMost(bestGood);
 			if (bestGoodClass != "")
 			{
 				bestClass = bestGoodClass;
 			}
 		}
 
-		var newAgent = getAgent(market.getAgentClass(bestClass));
+		String newAgent = getAgent(market.getAgentClass(bestClass));
 		market.replaceAgent(agent, newAgent);
 	}
 
@@ -65,9 +53,9 @@ class DoranAndParberryEconomy extends Economy
 	 * @return
 	 */
 	/*
-	public function getAgentClassAverageInventory(className:String, good:String):Float
+	public  getAgentClassAverageInventory(className:String, good:String):Float
 	{
-		var list = _agents.filter(function(a:BasicAgent):Bool { return a.className == className; } );
+		var list = _agents.filter((a:BasicAgent):Bool { return a.className == className; } );
 		var amount:Float = 0;
 		for (agent in list)
 		{
@@ -83,14 +71,15 @@ class DoranAndParberryEconomy extends Economy
 	 * @param	good
 	 * @return
 	 */
-	public function getAgentClassThatMakesMost(good:String):String
-	{
-		return if (good == "food" ) {"farmer";      }
-		  else if (good == "wood" ) {"woodcutter";  }
-		  else if (good == "ore"  ) {"miner";       }
-		  else if (good == "metal") {"refiner";     }
-		  else if (good == "tools") { "blacksmith"; }
-		  else "";
+	public String getAgentClassThatMakesMost(String good)	{
+		switch (good) {
+			case "food": return "farmer";
+			case "wood": return "woodcutter";
+			case "ore":return "miner";
+			case "metal":return "refiner";
+			case "tools":return "blacksmith";
+			default: return "";
+		}
 	}
 
 	/**
@@ -99,7 +88,7 @@ class DoranAndParberryEconomy extends Economy
 	 * @return
 	 */
 	/*
-	public function getAgentClassWithMost(good:String):String
+	public  getAgentClassWithMost(good:String):String
 	{
 		var amount:Float = 0;
 		var bestAmount:Float = 0;
@@ -117,19 +106,8 @@ class DoranAndParberryEconomy extends Economy
 	}
 	*/
 
-	private function getAgentScript(data:AgentData):BasicAgent
-	{
-		data.logic = new LogicScript(data.logicName+".hs");
-		return new Agent(0, data);
-	}
 
-	private function getAgent(data:AgentData):BasicAgent
-	{
-		data.logic = getLogic(data.logicName);
-		return new Agent(0, data);
-	}
-
-	private function getLogic(str:String):Logic
+	private Logic getLogic(String str)
 	{
 		switch(str)
 		{

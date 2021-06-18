@@ -1,7 +1,8 @@
 package org.proterra.danp.jobs;
-import bazaarbot.agent.BasicAgent;
-import bazaarbot.agent.Logic;
-import bazaarbot.Market;
+import org.proterra.bazaar.agent.*;
+import org.proterra.bazaar.*;
+
+
 /**
  * ...
  * @author larsiusprime
@@ -9,14 +10,14 @@ import bazaarbot.Market;
 class LogicGeneric extends Logic
 {
 
-	public function new(?data:Dynamic)
+	public LogicGeneric()
 	{
-		super(data);
+		super();
 	}
 
-	private function makeRoomFor(market:Market, agent:BasicAgent, good:String = "food", amt:Float = 1.0):Void
+	private void makeRoomFor(Market market, BasicAgent agent, String good, float amt)
 	{
-		var toDrop:String = market.getCheapestGood(10, [good]);
+		String toDrop = market.getCheapestGood(10,good);
 		if (toDrop != "")
 		{
 			_consume(agent, toDrop, amt);

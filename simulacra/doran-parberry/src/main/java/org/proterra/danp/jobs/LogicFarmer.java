@@ -8,18 +8,18 @@ import bazaarbot.Market;
 class LogicFarmer extends LogicGeneric
 {
 
-	public function new(?data:Dynamic)
+	public LogicFarmer()
 	{
-		super(data);
+		super();
 	}
-	
-	override public function perform(agent:BasicAgent, market:Market)
+
+	public void perform(BasicAgent agent, Market market)
 	{
-		var wood = agent.queryInventory("wood");
-		var tools = agent.queryInventory("tools");
+		float wood = agent.queryInventory("wood");
+		float tools = agent.queryInventory("tools");
 		
-		var has_wood = wood >= 1;
-		var has_tools = tools >= 1;
+		boolean has_wood = wood >= 1;
+				booleanhas_tools = tools >= 1;
 		
 		if (has_wood)
 		{
