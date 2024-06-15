@@ -1,6 +1,3 @@
 {
-    "java.configuration.updateBuildConfiguration": "automatic",
-    "java.project.sourcePaths": [
-        "bazaar/lib/src/main/java"
-    ]
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

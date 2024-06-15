@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+option java_package = "org.mercatia.transport";
+option java_multiple_files = true;
+
+option java_outer_classname = "Proto";
+// option objc_class_prefix = "HLW";
+
+package mercatia;
+
+// The greeting service definition.
+service Transport {
+  // Sends a greeting. Original method.
+  rpc SendEconomyReport (EconomyReport) returns (Confirmation) {}
+  // Sends another greeting. New method.
+//   rpc StreamOrders (OrderRequest) returns (Orders) {}
+}
+
+// message OrderRequest {
+
+// }
+
+// message Orders {
+
+// }
+
+message EconomyReport {
+  string name = 1;
+}
+
+// The response message containing the confirmation - HTTP codes
+message Confirmation {
+  
+  string code = 1;
+  string message = 2;
+}
