@@ -7,6 +7,7 @@ import org.mercatia.bazaar.AgentBankruptEvent;
 import org.mercatia.bazaar.Economy;
 import org.mercatia.bazaar.Market;
 import org.mercatia.bazaar.MarketData;
+import org.mercatia.bazaar.Transport;
 import org.mercatia.bazaar.agent.Agent;
 import org.mercatia.bazaar.agent.AgentData;
 import org.mercatia.bazaar.impl.MarketImpl;
@@ -52,8 +53,10 @@ public class DoranParberryEconomy extends Economy {
 			super();	
 	}
 
+	private Transport transport;
+
 	@Override
-	public void configure() {
+	public void configure(Transport transport) {
 
 		try{
 			LOGGER.info("Reading the configuration");
@@ -67,6 +70,7 @@ public class DoranParberryEconomy extends Economy {
 			throw new RuntimeException(e);
 		}
 
+		this.transport = transport;
 
 		for (var n : marketNames){
 			addMarket(new MarketImpl(n,this.startingMarketData));
@@ -145,7 +149,7 @@ public class DoranParberryEconomy extends Economy {
 
 	@Override
 	public void handleEvent(Event evt) {
-		// TODO Auto-generated method stub
+		transport.greet(evt.toString());
 
 	}
 

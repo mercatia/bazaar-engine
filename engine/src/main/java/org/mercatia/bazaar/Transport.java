@@ -29,7 +29,7 @@ public class Transport implements AutoCloseable, MarketListener {
 
     /** Say hello to server. */
     public void greet(String name) {
-        EconomyReport report = EconomyReport.newBuilder().build();
+        EconomyReport report = EconomyReport.newBuilder().setName(name).build();
         Confirmation response;
         try {
             response = blockingStub.sendEconomyReport(report);
@@ -46,7 +46,7 @@ public class Transport implements AutoCloseable, MarketListener {
         //
         // For the example we use plaintext insecure credentials to avoid needing TLS certificates. To
         // use TLS, use TlsChannelCredentials instead.
-        var target = "127.0.0.1";
+        var target = "127.0.0.1:50051";
         ManagedChannel channel = Grpc.newChannelBuilder(target, InsecureChannelCredentials.create())
                 .build();
         var transport = new Transport(channel);

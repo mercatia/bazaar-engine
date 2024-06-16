@@ -27,7 +27,7 @@ public abstract class Economy implements MarketListener {
 
 	}
 
-	public abstract void configure();
+	public abstract void configure(Transport transport);
 
 	public void addMarket(Market m)
 	{
