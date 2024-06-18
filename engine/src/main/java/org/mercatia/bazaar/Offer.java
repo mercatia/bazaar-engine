@@ -1,5 +1,7 @@
 package org.mercatia.bazaar;
 
+import org.mercatia.bazaar.agent.Agent.ID;
+
 /**
 
  */
@@ -8,14 +10,14 @@ public class Offer
 	public String good;	//the thing offered
 	public float units;			//how many units
 	private float unit_price;	//price per unit
-	public String agent_id;		//who offered this
+	public ID agent_id;		//who offered this
 
 	public float getUnitPrice(){
 		return this.unit_price;
 	}
 
 
-	public Offer(String agent_id,String commodity,float units,float unit_price)
+	public Offer(ID agent_id,String commodity,float units,float unit_price)
 	{
 		this.agent_id = agent_id;
 		this.good = commodity;

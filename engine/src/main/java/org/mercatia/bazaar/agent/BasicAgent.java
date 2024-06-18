@@ -1,7 +1,9 @@
 package org.mercatia.bazaar.agent;
 
 import java.util.List;
+import java.util.Map;
 
+import org.mercatia.bazaar.Good;
 import org.mercatia.bazaar.Market;
 import org.mercatia.bazaar.Offer;
 import org.mercatia.bazaar.utils.Point;
@@ -19,8 +21,8 @@ public class BasicAgent extends Agent {
 
 	public static float MIN_PRICE = 0.01f; // lowest possible price
 
-	public BasicAgent(String id, AgentData data) {
-		super(id, data);
+	public BasicAgent(String id, AgentData data, Map<String, Good> goods) {
+		super(id, data, goods);
 	}
 
 	public Offer createBid(Market bazaar, String good, float limit) {
@@ -82,7 +84,7 @@ public class BasicAgent extends Agent {
 
 	@Override
 	public void updatePriceModel(Market market, String act, String goodid, boolean success) {
-		updatePriceModel(market,act,goodid,success,0.0f);
+		updatePriceModel(market, act, goodid, success, 0.0f);
 	}
 
 	public void updatePriceModel(Market bazaar, String act, String good, boolean success, float unitPrice) {
@@ -170,29 +172,25 @@ public class BasicAgent extends Agent {
 		// this.
 	}
 
-	public  void produce(String commodity, float amount, float chance)
-	{
-		if (chance >= 1.0 || Math.random() < chance)
-		{
+	public void produce(String commodity, float amount, float chance) {
+		if (chance >= 1.0 || Math.random() < chance) {
 			changeInventory(commodity, amount);
 		}
 	}
 
-	public  void consume (String commodity, float amount)
-	{ 
-		consume(commodity,amount,1.0f);
+	public void produce(String commodity, float amount) {
+		produce(commodity, amount, 1.0f);
 	}
 
-	public  void consume (String commodity, float amount, float chance)
-	{
-		if (chance >= 1.0 || Math.random() < chance)
-		{
-			if (commodity == "money")
-			{
+	public void consume(String commodity, float amount) {
+		consume(commodity, amount, 1.0f);
+	}
+
+	public void consume(String commodity, float amount, float chance) {
+		if (chance >= 1.0 || Math.random() < chance) {
+			if (commodity == "money") {
 				money -= amount;
-			}
-			else
-			{
+			} else {
 				changeInventory(commodity, -amount);
 			}
 		}

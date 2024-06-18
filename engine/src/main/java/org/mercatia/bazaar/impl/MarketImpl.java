@@ -1,53 +1,57 @@
 package org.mercatia.bazaar.impl;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.mercatia.bazaar.AgentBankruptEvent;
+import org.mercatia.bazaar.Economy;
 import org.mercatia.bazaar.Good;
 import org.mercatia.bazaar.Market;
 import org.mercatia.bazaar.MarketData;
 import org.mercatia.bazaar.Offer;
 import org.mercatia.bazaar.agent.Agent;
+import org.mercatia.bazaar.agent.Agent.ID;
 import org.mercatia.bazaar.agent.AgentData;
 import org.mercatia.bazaar.utils.History;
 import org.mercatia.bazaar.utils.Quick;
+import org.mercatia.events.EventsOrigin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * ...
- * 
- * @author
- */
-public class MarketImpl implements Market {
-	public String name;
 
+ */
+public class MarketImpl extends EventsOrigin implements Market {
+	public String name;
+    static Logger logger = LoggerFactory.getLogger(MarketImpl.class);
 	/** Logs information about all economic activity in this market **/
 	public History history;
 
 	/** Signal fired when an agent's money reaches 0 or below **/
 	// public MarketEvent signalBankrupt;
 	private List<String> _goodTypes; // list of string ids for all the legal commodities
-	private Map<String, Agent> _agents;
+	private Map<ID, Agent> _agents;
 	private TradeBook _book;
 	private Map<String, AgentData> _mapAgents;
 	private Map<String, Good> _mapGoods;
+	private Economy economy;
 
-	public MarketImpl(String name, MarketData data) {
+	public MarketImpl(String name, MarketData data, Economy econonmy) {
 		this.name = name;
+
+
 
 		history = new History();
 		_book = new TradeBook();
 
 		_goodTypes = new ArrayList<String>();
-		_agents = new HashMap<String, Agent>();
+		_agents = new HashMap<ID, Agent>();
 		_mapGoods = new HashMap<String, Good>();
 		_mapAgents = new HashMap<String, AgentData>();
 
-		for (Good good : data.goods) {
+		for (Good good : data.goods.values()) {
 			_goodTypes.add(good.id);
 			_mapGoods.put(good.id, good);
 
@@ -60,8 +64,17 @@ public class MarketImpl implements Market {
 			_book.register(good.id);
 		}
 
-		for (AgentData agent : data.agents) {
-			// _agents.put(agent.id, agent);
+		// Create the default set of agents
+		var af = econonmy.getAgentFactory();
+		var agentData = data.agents;
+		for (var agentStart : data.startConditions.getAgents().entrySet()) {
+			int count = agentStart.getValue();
+			String type = agentStart.getKey();
+			for (int i = 0; i < count; i++) {
+				var agent = af.agentData(agentData.get(type)).goods(this._mapGoods).build();
+				agent.init(this);
+				this._agents.put(agent.getId(), agent);
+			}
 		}
 
 	}
@@ -96,12 +109,20 @@ public class MarketImpl implements Market {
 			resolveOffers(id);
 		}
 
+		var toRemove = new ArrayList<ID>();
 		for (Agent agent : _agents.values()) {
 			if (agent.money <= 0) {
-				this.fireEvent(new AgentBankruptEvent(this, agent));
+				toRemove.add(agent.id);
 			}
 		}
 
+		logger.info(getMarketReport().toString());
+		// this.fireMarketReportEvent(new MarketReportEvent(this));
+
+	}
+
+	public Agent getAgent(ID id){
+		return this._agents.get(id);
 	}
 
 	public void ask(Offer offer) {
@@ -248,8 +269,10 @@ public class MarketImpl implements Market {
 	}
 
 	private void resolveOffers(String good) {
+		
 		List<Offer> bids = _book.getBids(good);
 		List<Offer> asks = _book.getAsks(good);
+		logger.info("For "+good+" bids="+bids.size()+" asks="+asks.size());
 
 		// not sure why shuffle here..
 		Collections.shuffle(bids);
@@ -264,7 +287,7 @@ public class MarketImpl implements Market {
 				return 0;
 			}
 
-		}); 
+		});
 
 		// highest buying price first
 		asks.sort((Offer a, Offer b) -> {
@@ -400,14 +423,14 @@ public class MarketImpl implements Market {
 
 	}
 
-	private void transferGood(String good, float units, String seller_id, String buyer_id) {
+	private void transferGood(String good, float units, ID seller_id, ID buyer_id) {
 		Agent seller = _agents.get(seller_id);
 		Agent buyer = _agents.get(buyer_id);
 		seller.changeInventory(good, -units);
 		buyer.changeInventory(good, units);
 	}
 
-	private void transferMoney(float amount, String seller_id, String buyer_id) {
+	private void transferMoney(float amount, ID seller_id, ID buyer_id) {
 		Agent seller = _agents.get(seller_id);
 		Agent buyer = _agents.get(buyer_id);
 		seller.money += amount;
@@ -428,6 +451,11 @@ public class MarketImpl implements Market {
 	public MarketReport getMarketReport() {
 		MarketReport mr = new MarketReport();
 		mr.name = this.name;
+
+		for (var a :this._agents.values()){
+			mr.agents.put(a.getId().toString(), a.toString());
+		}
+
 		return mr;
 	}
 

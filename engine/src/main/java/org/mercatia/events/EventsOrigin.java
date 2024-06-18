@@ -3,16 +3,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public interface EventsOrigin {
-    final List<EventsListener> listeners = new ArrayList<EventsListener>();
+public class EventsOrigin {
+    final List<MarketEventListener> listeners = new ArrayList<MarketEventListener>();
 
-    public default void addListener(EventsListener listener){
+    public void addListener(MarketEventListener listener){
         listeners.add(listener);
     }
 
-    public default void fireEvent(EventsObject event){
-        for (EventsListener l : listeners) {
-            event.dispatch(l);
+    public void fireMarketReportEvent(MarketReportEvent event){
+        for (var l : listeners) {
+            l.marketReport(event);
         }
     }
 

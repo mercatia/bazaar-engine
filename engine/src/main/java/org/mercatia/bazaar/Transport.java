@@ -1,11 +1,13 @@
 package org.mercatia.bazaar;
 
-import java.util.concurrent.TimeUnit;
-
+import org.mercatia.events.AgentBankruptEvent;
+import org.mercatia.events.MarketEventListener;
+import org.mercatia.events.MarketReportEvent;
 import org.mercatia.transport.Confirmation;
 import org.mercatia.transport.EconomyReport;
 import org.mercatia.transport.TransportGrpc;
-import org.w3c.dom.events.Event;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import io.grpc.Channel;
 import io.grpc.Grpc;
@@ -13,7 +15,8 @@ import io.grpc.InsecureChannelCredentials;
 import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
 
-public class Transport implements AutoCloseable, MarketListener {
+public class Transport implements AutoCloseable, MarketEventListener {
+    static Logger logger = LoggerFactory.getLogger(Transport.class);
     private final TransportGrpc.TransportBlockingStub blockingStub;
     private Channel channel;
 
@@ -40,6 +43,8 @@ public class Transport implements AutoCloseable, MarketListener {
 
     public static Transport configure() {
 
+        
+        logger.info("Configure....");
         // Create a communication channel to the server, known as a Channel. Channels are thread-safe
         // and reusable. It is common to create channels at the beginning of your application and reuse
         // them until the application shuts down.
@@ -61,15 +66,15 @@ public class Transport implements AutoCloseable, MarketListener {
     }
 
     @Override
-    public void handleEvent(Event evt) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'handleEvent'");
+    public void marketReport(MarketReportEvent event) {
+        greet(event.getReport().toString());
     }
 
     @Override
-    public void agentBankurpt(AgentBankruptEvent evt) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'agentBankurpt'");
+    public void agentBankrupt(AgentBankruptEvent event) {
+       
     }
+
+
 
 }

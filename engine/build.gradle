@@ -25,6 +25,11 @@ dependencies {
     implementation 'io.grpc:grpc-stub:1.64.0'
     compileOnly 'org.apache.tomcat:annotations-api:6.0.53' // necessary for Java 9+
 
+
+    // https://mvnrepository.com/artifact/org.slf4j/slf4j-api
+    implementation 'org.slf4j:slf4j-api:2.0.13'
+
+
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     implementation libs.guava
 }

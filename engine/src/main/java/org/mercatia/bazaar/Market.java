@@ -4,11 +4,10 @@ import java.util.List;
 
 import org.mercatia.bazaar.impl.MarketReport;
 import org.mercatia.bazaar.utils.History;
-import org.mercatia.events.EventsOrigin;
 
 
 
-public interface Market extends EventsOrigin {
+public interface Market  {
 
     String getName();
 

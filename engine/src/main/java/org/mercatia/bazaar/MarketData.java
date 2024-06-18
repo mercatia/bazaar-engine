@@ -1,8 +1,10 @@
 package org.mercatia.bazaar;
 
 import java.util.List;
+import java.util.Map;
 
 import org.mercatia.bazaar.agent.AgentData;
+
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -11,14 +13,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class MarketData {
 
-	@JsonProperty("goods")
-	public List<Good> goods;
-
 	@JsonProperty("start_conditions")
 	public StartConditions startConditions;
 
 	@JsonProperty("agents")
-	public List<AgentData> agents;
+	public Map<String, AgentData> agents;
+
+	@JsonProperty("goods")
+	public Map<String, Good> goods;
 
 	public String toString() {
 		StringBuilder sb = new StringBuilder("MarketData").append(System.lineSeparator());

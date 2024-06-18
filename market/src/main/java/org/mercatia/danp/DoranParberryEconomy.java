@@ -1,9 +1,7 @@
 package org.mercatia.danp;
 
 import java.io.InputStream;
-import java.util.logging.Logger;
 
-import org.mercatia.bazaar.AgentBankruptEvent;
 import org.mercatia.bazaar.Economy;
 import org.mercatia.bazaar.Market;
 import org.mercatia.bazaar.MarketData;
@@ -16,41 +14,43 @@ import org.mercatia.danp.jobs.LogicFarmer;
 import org.mercatia.danp.jobs.LogicMiner;
 import org.mercatia.danp.jobs.LogicRefiner;
 import org.mercatia.danp.jobs.LogicWoodcutter;
-import org.w3c.dom.events.Event;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  */
 public class DoranParberryEconomy extends Economy {
-	private static final Logger LOGGER = Logger.getLogger(DoranParberryEconomy.class.getName());
 
-	public static class JobFactory extends AgentData.Factory{
+	static Logger logger = LoggerFactory.getLogger(DoranParberryEconomy.class);
+
+	public static class JobFactory extends AgentData.Factory {
 
 		@Override
 		public Agent build() {
-			switch (this.id){
+			switch (logic()) {
 				case "farmer":
-					return new LogicFarmer(id, data);
+					return new LogicFarmer(id, data, goods);
 				case "miner":
-					return new LogicMiner(id, data);
+					return new LogicMiner(id, data, goods);
 				case "refiner":
-					return new LogicRefiner(id, data);
-				case "woocutter":
-					return new LogicWoodcutter(id, data);
+					return new LogicRefiner(id, data, goods);
+				case "woodcutter":
+					return new LogicWoodcutter(id, data, goods);
 				case "blacksmith":
-					return new LogicBlacksmith(id, data);
+					return new LogicBlacksmith(id, data, goods);
 				default:
-					throw new RuntimeException(this.id+" unknown");
+					throw new RuntimeException(this.logic() + " unknown");
 			}
 		}
-		
+
 	}
 
-	private final static String[] marketNames = new String[]{"WibbleCity"};
+	private final static String[] marketNames = new String[] { "WibbleCity" };
 
 	public DoranParberryEconomy() {
-			super();	
+		super();
 	}
 
 	private Transport transport;
@@ -58,25 +58,30 @@ public class DoranParberryEconomy extends Economy {
 	@Override
 	public void configure(Transport transport) {
 
-		try{
-			LOGGER.info("Reading the configuration");
-			ObjectMapper mapper=new ObjectMapper();
+		try {
+			logger.info("Reading the configuration");
+			ObjectMapper mapper = new ObjectMapper();
 			InputStream is = this.getClass().getClassLoader().getResourceAsStream("settings.json");
-	
-			this.startingMarketData = mapper.readValue(is, MarketData.class);
-			LOGGER.info(startingMarketData.toString());
 
-		} catch (Exception e){
+			this.startingMarketData = mapper.readValue(is, MarketData.class);
+			logger.info(startingMarketData.toString());
+
+		} catch (Exception e) {
 			throw new RuntimeException(e);
 		}
 
 		this.transport = transport;
+		transport.greet(this.getClass().getSimpleName() + " hello");
 
-		for (var n : marketNames){
-			addMarket(new MarketImpl(n,this.startingMarketData));
+		setAgentFactory(new JobFactory());
+
+		for (var n : marketNames) {
+			var market = new MarketImpl(n, this.startingMarketData, this);
+			market.addListener(transport);
+			addMarket(market);
 		}
-	}
 
+	}
 
 	/**
 	 * Get the average amount of a given good that a given agent class has
@@ -141,24 +146,9 @@ public class DoranParberryEconomy extends Economy {
 	// return null;
 	// }
 
-	@Override
-	public void agentBankurpt(AgentBankruptEvent arg0) {
-		LOGGER.info("Agent has become bankrupt "+arg0 );
-
-	}
-
-	@Override
-	public void handleEvent(Event evt) {
-		transport.greet(evt.toString());
-
-	}
-
 	public void onBankruptcy(Market arg0, Agent arg1) {
 		// TODO Auto-generated method stub
 
 	}
-
-
-
 
 }

@@ -1,11 +1,12 @@
 package org.mercatia.bazaar.agent;
 
+import java.util.Map;
+
+import org.mercatia.bazaar.Good;
+
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class AgentData {
-
-    @JsonProperty("id")
-    String id;
 
     @JsonProperty("money")
     float money;
@@ -19,17 +20,24 @@ public class AgentData {
     public static abstract class Factory {
         protected String id;
         protected AgentData data;
-
-        public Factory id(String id){
-            this.id = id;
-            return this;
-        }
+        protected Map<String,Good> goods;
+        
 
         public Factory agentData(AgentData data){
             this.data = data;
             return this;
         }
 
+        public String logic(){
+            return data.logicName;
+        }
+    
         public abstract Agent build();
+
+        public Factory goods(Map<String, Good> goods) {
+            this.goods = goods;
+            return this;
+        }
     }
+
 }

@@ -1,9 +1,11 @@
 package org.mercatia.danp.jobs;
-import org.mercatia.bazaar.agent.*;
-
 import java.util.Arrays;
+import java.util.Map;
 
-import org.mercatia.bazaar.*;
+import org.mercatia.bazaar.Good;
+import org.mercatia.bazaar.Market;
+import org.mercatia.bazaar.agent.AgentData;
+import org.mercatia.bazaar.agent.BasicAgent;
 
 
 /**
@@ -13,9 +15,9 @@ import org.mercatia.bazaar.*;
 public abstract class GenericJob extends BasicAgent
 {
 
-	public GenericJob(String id, AgentData data)
+	public GenericJob(String id, AgentData data, Map<String,Good> goods)
 	{
-		super(id,data);
+		super(id,data, goods);
 	}
 
 	public void makeRoomFor(Market market, BasicAgent agent, String good, float amt)

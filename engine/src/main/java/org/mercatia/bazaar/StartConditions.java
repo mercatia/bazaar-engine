@@ -14,4 +14,8 @@ public class StartConditions {
     public String toString(){
         return agents.toString();
     }
+
+    public Map<String,Integer> getAgents(){
+        return this.agents;
+    }
 }
