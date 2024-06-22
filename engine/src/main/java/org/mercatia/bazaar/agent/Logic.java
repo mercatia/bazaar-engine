@@ -1,6 +1,8 @@
 package org.mercatia.bazaar.agent;
 
 import org.mercatia.bazaar.Market;
+import org.mercatia.bazaar.currency.Currency;
+import org.mercatia.bazaar.currency.Money;
 
 
 /**
@@ -32,7 +34,8 @@ public interface Logic
 		{
 			if (commodity == "money")
 			{
-				agent.money -= amount;
+				agent.money = agent.money.subtract(Money.from(Currency.DEFAULT,amount));
+				
 			}
 			else
 			{

@@ -17,6 +17,10 @@ dependencies {
     // https://mvnrepository.com/artifact/org.slf4j/slf4j-simple
     implementation 'org.slf4j:slf4j-simple:2.0.13'
 
+
+    implementation 'io.vertx:vertx-core:4.5.8'
+    implementation 'io.vertx:vertx-web:4.5.8'
+
     implementation project(':market')
 }
 

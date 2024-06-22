@@ -5,7 +5,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
+import org.mercatia.Jsonable;
 import org.mercatia.bazaar.Economy;
 import org.mercatia.bazaar.Good;
 import org.mercatia.bazaar.Market;
@@ -14,8 +17,11 @@ import org.mercatia.bazaar.Offer;
 import org.mercatia.bazaar.agent.Agent;
 import org.mercatia.bazaar.agent.Agent.ID;
 import org.mercatia.bazaar.agent.AgentData;
+import org.mercatia.bazaar.currency.Currency;
+import org.mercatia.bazaar.currency.Money;
 import org.mercatia.bazaar.utils.History;
 import org.mercatia.bazaar.utils.Quick;
+import org.mercatia.bazaar.utils.ValueRT;
 import org.mercatia.events.EventsOrigin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,9 +29,9 @@ import org.slf4j.LoggerFactory;
 /**
 
  */
-public class MarketImpl extends EventsOrigin implements Market {
+public class MarketImpl extends EventsOrigin implements Market{
 	public String name;
-    static Logger logger = LoggerFactory.getLogger(MarketImpl.class);
+	static Logger logger = LoggerFactory.getLogger(MarketImpl.class);
 	/** Logs information about all economic activity in this market **/
 	public History history;
 
@@ -38,10 +44,18 @@ public class MarketImpl extends EventsOrigin implements Market {
 	private Map<String, Good> _mapGoods;
 	private Economy economy;
 
+	private record J(String name, List<String> agentids, List<String> goods, Jsony tradebook) implements Jsony {
+	};
+
+	public Jsony jsonify() {		
+		return new J(name,
+				_agents.keySet().stream().map(v -> v.toString()).collect(Collectors.toList()),
+				_goodTypes,
+				_book.jsonify());
+	}
+
 	public MarketImpl(String name, MarketData data, Economy econonmy) {
 		this.name = name;
-
-
 
 		history = new History();
 		_book = new TradeBook();
@@ -56,10 +70,10 @@ public class MarketImpl extends EventsOrigin implements Market {
 			_mapGoods.put(good.id, good);
 
 			history.register(good.id);
-			history.prices.add(good.id, 1.0f);
-			history.asks.add(good.id, 1.0f);
-			history.bids.add(good.id, 1.0f);
-			history.trades.add(good.id, 1.0f);
+			history.prices.add(good.id, Money.from(Currency.DEFAULT, 1.0f));
+			history.asks.add(good.id, ValueRT.of(1.0f));
+			history.bids.add(good.id, ValueRT.of(1.0f));
+			history.trades.add(good.id, ValueRT.of(1.0f));
 
 			_book.register(good.id);
 		}
@@ -111,18 +125,22 @@ public class MarketImpl extends EventsOrigin implements Market {
 
 		var toRemove = new ArrayList<ID>();
 		for (Agent agent : _agents.values()) {
-			if (agent.money <= 0) {
+			if (agent.money.zeroOrLess()) {
 				toRemove.add(agent.id);
 			}
 		}
 
-		logger.info(getMarketReport().toString());
+		// logger.info(getMarketReport().toString());
 		// this.fireMarketReportEvent(new MarketReportEvent(this));
 
 	}
 
-	public Agent getAgent(ID id){
+	public Agent getAgent(ID id) {
 		return this._agents.get(id);
+	}
+
+	public Set<ID> getAgents() {
+		return this._agents.keySet();
 	}
 
 	public void ask(Offer offer) {
@@ -142,7 +160,7 @@ public class MarketImpl extends EventsOrigin implements Market {
 	 * @return
 	 */
 
-	public float getAverageHistoricalPrice(String goodid, int range) {
+	public Money getAverageHistoricalPrice(String goodid, int range) {
 		return history.prices.average(goodid, range);
 	}
 
@@ -156,12 +174,12 @@ public class MarketImpl extends EventsOrigin implements Market {
 
 	public String getHottestGood(float minimum, int range) {
 		String best_market = "";
-		float best_ratio = Float.NEGATIVE_INFINITY;
+		double best_ratio = Double.NEGATIVE_INFINITY;
 		for (String goodid : _goodTypes) {
-			float asks = history.asks.average(goodid, range);
-			float bids = history.bids.average(goodid, range);
+			double asks = history.asks.average(goodid, range).as();
+			double bids = history.bids.average(goodid, range).as();
 
-			float ratio = 0;
+			double ratio = 0;
 			if (asks == 0 && bids > 0) {
 				// If there are NONE on the market we artificially create a fake supply of 1/2 a
 				// unit to avoid the
@@ -190,11 +208,11 @@ public class MarketImpl extends EventsOrigin implements Market {
 	 */
 
 	public String getCheapestGood(int range, List<String> exclude) {
-		float best_price = Float.POSITIVE_INFINITY;
+		double best_price = Double.POSITIVE_INFINITY;
 		String best_good = "";
 		for (String goodid : _goodTypes) {
 			if (exclude == null || exclude.indexOf(goodid) == -1) {
-				float price = history.prices.average(goodid, range);
+				double price = history.prices.average(goodid, range).as();
 				if (price < best_price) {
 					best_price = price;
 					best_good = goodid;
@@ -213,11 +231,11 @@ public class MarketImpl extends EventsOrigin implements Market {
 	 * @return
 	 */
 	public String getDearestGood(int range, List<String> exclude) {
-		float best_price = 0;
+		double best_price = 0;
 		String best_good = "";
 		for (String goodid : _goodTypes) {
 			if (exclude == null || exclude.indexOf(goodid) == -1) {
-				float price = history.prices.average(goodid, range);
+				double price = history.prices.average(goodid, range).as();
 				if (price > best_price) {
 					best_price = price;
 					best_good = goodid;
@@ -233,10 +251,10 @@ public class MarketImpl extends EventsOrigin implements Market {
 	 * @return
 	 */
 	public String getMostProfitableAgentClass(int range) {
-		float best = Float.NEGATIVE_INFINITY;
+		double best = Double.NEGATIVE_INFINITY;
 		String bestClass = "";
 		for (String className : _mapAgents.keySet()) {
-			float val = history.profit.average(className, range);
+			double val = history.profit.average(className, range).as();
 			if (val > best) {
 				bestClass = className;
 				best = val;
@@ -269,19 +287,18 @@ public class MarketImpl extends EventsOrigin implements Market {
 	}
 
 	private void resolveOffers(String good) {
-		
+
 		List<Offer> bids = _book.getBids(good);
 		List<Offer> asks = _book.getAsks(good);
-		logger.info("For "+good+" bids="+bids.size()+" asks="+asks.size());
 
 		// not sure why shuffle here..
 		Collections.shuffle(bids);
 		Collections.shuffle(asks);
 
 		bids.sort((Offer a, Offer b) -> {
-			if (a.getUnitPrice() < b.getUnitPrice()) {
+			if (a.getUnitPrice().less(b.getUnitPrice())) {
 				return -1;
-			} else if (a.getUnitPrice() > b.getUnitPrice()) {
+			} else if (a.getUnitPrice().greater(b.getUnitPrice())) {
 				return 1;
 			} else {
 				return 0;
@@ -291,9 +308,9 @@ public class MarketImpl extends EventsOrigin implements Market {
 
 		// highest buying price first
 		asks.sort((Offer a, Offer b) -> {
-			if (a.getUnitPrice() < b.getUnitPrice()) {
+			if (a.getUnitPrice().less(b.getUnitPrice())) {
 				return 1;
-			} else if (a.getUnitPrice() > b.getUnitPrice()) {
+			} else if (a.getUnitPrice().greater(b.getUnitPrice())) {
 				return -1;
 			} else {
 				return 0;
@@ -302,9 +319,9 @@ public class MarketImpl extends EventsOrigin implements Market {
 		}); // lowest selling price first
 
 		int successfulTrades = 0; // # of successful trades this round
-		float moneyTraded = 0; // amount of money traded this round
+		Money moneyTraded = Money.NONE(); // amount of money traded this round
 		float unitsTraded = 0; // amount of goods traded this round
-		float avgPrice = 0; // avg clearing price this round
+		Money avgPrice = Money.NONE(); // avg clearing price this round
 		float numAsks = 0;
 		float numBids = 0;
 
@@ -325,7 +342,7 @@ public class MarketImpl extends EventsOrigin implements Market {
 			Offer seller = asks.get(0);
 
 			float quantity_traded = Math.min(seller.units, buyer.units);
-			float clearing_price = Quick.avgf(seller.getUnitPrice(), buyer.getUnitPrice());
+			Money clearing_price = Quick.avgf(seller.getUnitPrice(), buyer.getUnitPrice());
 
 			if (quantity_traded > 0) {
 				// transfer the goods for the agreed price
@@ -333,7 +350,7 @@ public class MarketImpl extends EventsOrigin implements Market {
 				buyer.units -= quantity_traded;
 
 				transferGood(good, quantity_traded, seller.agent_id, buyer.agent_id);
-				transferMoney(quantity_traded * clearing_price, seller.agent_id, buyer.agent_id);
+				transferMoney(clearing_price.multiply(quantity_traded), seller.agent_id, buyer.agent_id);
 
 				// update agent price beliefs based on successful transaction
 				Agent buyer_a = _agents.get(buyer.agent_id);
@@ -342,7 +359,7 @@ public class MarketImpl extends EventsOrigin implements Market {
 				seller_a.updatePriceModel(this, "sell", good, true, clearing_price);
 
 				// log the stats
-				moneyTraded += (quantity_traded * clearing_price);
+				moneyTraded = moneyTraded.add(clearing_price.multiply(quantity_traded));
 				unitsTraded += quantity_traded;
 				successfulTrades++;
 			}
@@ -380,12 +397,12 @@ public class MarketImpl extends EventsOrigin implements Market {
 
 		// update history
 
-		history.asks.add(good, numAsks);
-		history.bids.add(good, numBids);
-		history.trades.add(good, unitsTraded);
+		history.asks.add(good, ValueRT.of(numAsks));
+		history.bids.add(good, ValueRT.of(numBids));
+		history.trades.add(good, ValueRT.of(unitsTraded));
 
 		if (unitsTraded > 0) {
-			avgPrice = moneyTraded / unitsTraded;
+			avgPrice = Money.from(Currency.DEFAULT, moneyTraded.as() / unitsTraded);
 			history.prices.add(good, avgPrice);
 		} else {
 			// special case: none were traded this round, use last round's average price
@@ -430,11 +447,11 @@ public class MarketImpl extends EventsOrigin implements Market {
 		buyer.changeInventory(good, units);
 	}
 
-	private void transferMoney(float amount, ID seller_id, ID buyer_id) {
+	private void transferMoney(Money amount, ID seller_id, ID buyer_id) {
 		Agent seller = _agents.get(seller_id);
 		Agent buyer = _agents.get(buyer_id);
-		seller.money += amount;
-		buyer.money -= amount;
+		seller.money = seller.money.add(amount);
+		buyer.money = buyer.money.subtract(amount);
 	}
 
 	@Override
@@ -452,8 +469,11 @@ public class MarketImpl extends EventsOrigin implements Market {
 		MarketReport mr = new MarketReport();
 		mr.name = this.name;
 
-		for (var a :this._agents.values()){
-			mr.agents.put(a.getId().toString(), a.toString());
+		var listAgents = this._agents.values().stream().sorted(
+				(o1, o2) -> o1.getName().compareTo(o2.getName())).collect(Collectors.toList());
+
+		for (var a : listAgents) {
+			mr.agents.add(a.toString());
 		}
 
 		return mr;

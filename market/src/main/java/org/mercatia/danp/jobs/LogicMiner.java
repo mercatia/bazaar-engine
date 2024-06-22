@@ -14,8 +14,8 @@ import org.mercatia.bazaar.agent.AgentData;
  */
 public class LogicMiner extends GenericJob {
 
-	public LogicMiner(String id, AgentData data, Map<String, Good> goods) {
-		super(id, data, goods);
+	public LogicMiner( AgentData data, Map<String, Good> goods) {
+		super("Miner", data, goods);
 	}
 
 	@Override

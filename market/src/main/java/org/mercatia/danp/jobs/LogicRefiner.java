@@ -14,8 +14,8 @@ import org.mercatia.bazaar.agent.AgentData;
  */
 public class LogicRefiner extends GenericJob {
 
-	public LogicRefiner(String id, AgentData data, Map<String, Good> goods) {
-		super(id, data, goods);
+	public LogicRefiner(AgentData data, Map<String, Good> goods) {
+		super("Refiner", data, goods);
 	}
 
 	@Override

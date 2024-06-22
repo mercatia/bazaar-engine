@@ -1,7 +1,7 @@
 package org.mercatia.bazaar.impl;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -11,11 +11,11 @@ public class MarketReport {
     public String name;
 
     @JsonProperty("agents")
-    public Map<String,String> agents = new HashMap<String,String>();
+    public List<String> agents = new ArrayList<String>();
 
     public String toString(){
         var sb = new StringBuilder(name);
-        for (var agent: agents.values()){
+        for (var agent: agents){
             sb.append(agent).append("\n");
         }
         

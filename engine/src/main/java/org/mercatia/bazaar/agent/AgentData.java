@@ -3,7 +3,10 @@ package org.mercatia.bazaar.agent;
 import java.util.Map;
 
 import org.mercatia.bazaar.Good;
+import org.mercatia.bazaar.currency.Currency;
+import org.mercatia.bazaar.currency.Money;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class AgentData {
@@ -40,4 +43,8 @@ public class AgentData {
         }
     }
 
+    @JsonIgnore
+    public Money getMoney(){
+        return Money.from(Currency.DEFAULT,money);
+    }
 }

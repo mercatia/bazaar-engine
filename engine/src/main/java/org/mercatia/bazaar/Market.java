@@ -1,13 +1,18 @@
 package org.mercatia.bazaar;
 
 import java.util.List;
+import java.util.Set;
 
+import org.mercatia.Jsonable;
+import org.mercatia.bazaar.agent.Agent;
+import org.mercatia.bazaar.agent.Agent.ID;
+import org.mercatia.bazaar.currency.Money;
 import org.mercatia.bazaar.impl.MarketReport;
 import org.mercatia.bazaar.utils.History;
 
 
 
-public interface Market  {
+public interface Market extends Jsonable  {
 
     String getName();
 
@@ -15,7 +20,7 @@ public interface Market  {
     
     void simulate(int rounds);
     
-    float getAverageHistoricalPrice(String goodid, int lookback);   
+    Money getAverageHistoricalPrice(String goodid, int lookback);   
 
     History getHistory();
     
@@ -26,4 +31,10 @@ public interface Market  {
 	public String getCheapestGood(int range, List<String> exclude);
 
     MarketReport getMarketReport();
+
+    public Set<ID> getAgents();
+
+    public Agent getAgent(ID id);
+
+
 }

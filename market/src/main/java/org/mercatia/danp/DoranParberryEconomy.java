@@ -31,15 +31,15 @@ public class DoranParberryEconomy extends Economy {
 		public Agent build() {
 			switch (logic()) {
 				case "farmer":
-					return new LogicFarmer(id, data, goods);
+					return new LogicFarmer(data, goods);
 				case "miner":
-					return new LogicMiner(id, data, goods);
+					return new LogicMiner(data, goods);
 				case "refiner":
-					return new LogicRefiner(id, data, goods);
+					return new LogicRefiner(data, goods);
 				case "woodcutter":
-					return new LogicWoodcutter(id, data, goods);
+					return new LogicWoodcutter( data, goods);
 				case "blacksmith":
-					return new LogicBlacksmith(id, data, goods);
+					return new LogicBlacksmith( data, goods);
 				default:
 					throw new RuntimeException(this.logic() + " unknown");
 			}

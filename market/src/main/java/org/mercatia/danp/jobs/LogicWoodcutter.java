@@ -4,7 +4,6 @@ import java.util.Map;
 
 import org.mercatia.bazaar.Good;
 import org.mercatia.bazaar.Market;
-import org.mercatia.bazaar.agent.Agent;
 import org.mercatia.bazaar.agent.AgentData;
 
 /**
@@ -14,8 +13,8 @@ import org.mercatia.bazaar.agent.AgentData;
  */
 public class LogicWoodcutter extends GenericJob {
 
-	public LogicWoodcutter(String id, AgentData data, Map<String, Good> goods) {
-		super(id, data, goods);
+	public LogicWoodcutter( AgentData data, Map<String, Good> goods) {
+		super("Woodcutter", data, goods);
 	}
 
 	@Override

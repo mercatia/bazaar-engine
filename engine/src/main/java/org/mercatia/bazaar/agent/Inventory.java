@@ -3,11 +3,12 @@ package org.mercatia.bazaar.agent;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.mercatia.Jsonable;
 import org.mercatia.bazaar.Good;
 
 /**
  */
-public class Inventory {
+public class Inventory implements Jsonable {
 
 	public float maxSize = 0.0f;
 	private Map<String, Float> sizes;
@@ -22,6 +23,15 @@ public class Inventory {
 		stuff = new HashMap<String, Float>();
 		ideal = new HashMap<String, Float>();
 		maxSize = 0;
+	}
+
+	
+	private record j(float maxSize, Map<String, Float> things) implements Jsony {
+	};
+
+	@Override
+	public Jsony jsonify() {
+		return new j(maxSize,stuff);
 	}
 
 	protected Inventory(float maxSize, Map<String, Float> ideal, Map<String, Float> start, Map<String, Good> goods) {
@@ -44,7 +54,8 @@ public class Inventory {
 
 	/**
 	 * Returns how much of this
-	 * @param	commodity_ string id of commodity
+	 * 
+	 * @param commodity_ string id of commodity
 	 * @return
 	 */
 
@@ -83,8 +94,9 @@ public class Inventory {
 
 	/**
 	 * Change the amount of the given commodity by delta
-	 * @param	commodity_ string id of commodity
-	 * @param	delta_ amount added
+	 * 
+	 * @param commodity_ string id of commodity
+	 * @param delta_     amount added
 	 */
 
 	public void change(String goodid, float delta) {
@@ -106,7 +118,8 @@ public class Inventory {
 
 	/**
 	 * Returns # of units above the desired inventory level, or 0 if @ or below
-	 * @param	commodity_ string id of commodity
+	 * 
+	 * @param commodity_ string id of commodity
 	 * @return
 	 */
 
@@ -124,7 +137,8 @@ public class Inventory {
 
 	/**
 	 * Returns # of units below the desired inventory level, or 0 if @ or above
-	 * @param	commodity_
+	 * 
+	 * @param commodity_
 	 * @return
 	 */
 
@@ -145,9 +159,9 @@ public class Inventory {
 		return invertory;
 	}
 
-	public String toString(){
+	public String toString() {
 		var sb = new StringBuilder();
-		for (var i : this.stuff.entrySet()){
+		for (var i : this.stuff.entrySet()) {
 			sb.append(i.getKey()).append("==").append(i.getValue()).append("/");
 		}
 

@@ -20,6 +20,6 @@ public class EconomyTimer extends TimerTask {
     @Override
     public void run() {
         logger.info("Calling simulate");
-        economy.simulate(1);
+        economy.simulate(1);       
     }
 }

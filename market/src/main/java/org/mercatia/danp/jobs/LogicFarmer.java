@@ -12,9 +12,9 @@ import org.mercatia.bazaar.agent.AgentData;
 public class LogicFarmer extends GenericJob
 {
 
-	public LogicFarmer(String id, AgentData data,Map<String,Good> goods)
+	public LogicFarmer(AgentData data,Map<String,Good> goods)
 	{
-		super(id,data,goods);
+		super("Farmer",data,goods);
 	}
 
 	@Override

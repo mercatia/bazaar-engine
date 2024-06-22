@@ -1,0 +1,14 @@
+GET http://127.0.0.1:8080/economy/EcoOne/market/WibbleCity/
+content-type: application/json
+
+###
+
+GET http://127.0.0.1:8080/economy/EcoOne/market/WibbleCity/agent/
+content-type: application/json
+
+###
+
+GET http://127.0.0.1:8080/economy/EcoOne/market/WibbleCity/agent/0e7a8614-2171-4658-9753-eeb2cd50e423/
+content-type: application/json
+
+

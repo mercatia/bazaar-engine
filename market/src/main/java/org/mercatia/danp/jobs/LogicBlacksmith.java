@@ -12,8 +12,8 @@ import org.mercatia.bazaar.agent.AgentData;
  */
 public class LogicBlacksmith extends GenericJob {
 
-	public LogicBlacksmith(String id, AgentData data, Map<String, Good> goods) {
-		super(id, data, goods);
+	public LogicBlacksmith(AgentData data, Map<String, Good> goods) {
+		super("Blacksmith", data, goods);
 	}
 
 	@Override

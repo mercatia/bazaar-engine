@@ -10,6 +10,7 @@
 plugins {
     id 'buildlogic.java-library-conventions'
     id 'com.google.protobuf' version '0.9.4'
+    id "com.adarshr.test-logger" version "4.0.0"
 }
 
 
@@ -49,4 +50,8 @@ protobuf {
       grpc {}
     }
   }
+}
+
+testlogger {
+  showStandardStreams  true
 }

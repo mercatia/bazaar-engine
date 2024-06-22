@@ -6,7 +6,11 @@ import java.util.Map;
 import org.mercatia.bazaar.Good;
 import org.mercatia.bazaar.Market;
 import org.mercatia.bazaar.Offer;
-import org.mercatia.bazaar.utils.Point;
+import org.mercatia.bazaar.currency.Currency;
+import org.mercatia.bazaar.currency.Money;
+import org.mercatia.bazaar.utils.ValueRT;
+import org.mercatia.bazaar.utils.Range;
+import org.mercatia.bazaar.utils.Range.LIMIT;
 
 /**
  * An agent that performs the basic logic from the Doran & Parberry article
@@ -15,18 +19,20 @@ import org.mercatia.bazaar.utils.Point;
  */
 public class BasicAgent extends Agent {
 	public static float SIGNIFICANT = 0.25f; // 25% more or less is "significant"
+	public static Money SIGNIFICANT_MONEY = Money.from(Currency.DEFAULT, 0.25f);
+
 	public static float SIG_IMBALANCE = 0.33f;
 	public static float LOW_INVENTORY = 0.1f; // 10% of ideal inventory = "LOW"
 	public static float HIGH_INVENTORY = 2.0f; // 200% of ideal inventory = "HIGH"
 
-	public static float MIN_PRICE = 0.01f; // lowest possible price
+	public static Money MIN_PRICE = Money.from(Currency.DEFAULT, 0.01f); // lowest possible price
 
 	public BasicAgent(String id, AgentData data, Map<String, Good> goods) {
 		super(id, data, goods);
 	}
 
 	public Offer createBid(Market bazaar, String good, float limit) {
-		float bidPrice = super.determinePriceOf(good);
+		Money bidPrice = super.determinePriceOf(good);
 		float ideal = determinePurchaseQuantity(bazaar, good);
 
 		// can't buy more than limit
@@ -38,7 +44,7 @@ public class BasicAgent extends Agent {
 	}
 
 	public Offer createAsk(Market bazaar, String commodity, float limit) {
-		float ask_price = determinePriceOf(commodity);
+		Money ask_price = determinePriceOf(commodity);
 		float ideal = determineSaleQuantity(bazaar, commodity);
 
 		// can't sell less than limit
@@ -84,11 +90,11 @@ public class BasicAgent extends Agent {
 
 	@Override
 	public void updatePriceModel(Market market, String act, String goodid, boolean success) {
-		updatePriceModel(market, act, goodid, success, 0.0f);
+		updatePriceModel(market, act, goodid, success, Money.from(Currency.DEFAULT, 0.0f));
 	}
 
-	public void updatePriceModel(Market bazaar, String act, String good, boolean success, float unitPrice) {
-		List<Float> observed_trades;
+	public void updatePriceModel(Market bazaar, String act, String good, boolean success, Money unitPrice) {
+		List<Money> observed_trades;
 
 		if (success) {
 			// Add this to my list of observed trades
@@ -96,30 +102,35 @@ public class BasicAgent extends Agent {
 			observed_trades.add(unitPrice);
 		}
 
-		float mean_price = bazaar.getAverageHistoricalPrice(good, 1);
+		Money mean_price = bazaar.getAverageHistoricalPrice(good, 1);
 
-		Point belief = getPriceBelief(good);
-		float mean = (belief.x + belief.y) / 2;
+		Range<Money> belief = getPriceBelief(good);
+		Money mean = belief.mean();
 		float wobble = 0.05f;
 
-		float delta_to_mean = mean - mean_price;
+		var delta_to_mean = mean.subtract(mean_price);
 
 		if (success) {
-			if (act == "buy" && delta_to_mean > SIGNIFICANT) // overpaid
+			if (act == "buy" && delta_to_mean.greater(SIGNIFICANT_MONEY)) // overpaid
 			{
-				belief.x -= delta_to_mean / 2; // SHIFT towards mean
-				belief.y -= delta_to_mean / 2;
-			} else if (act == "sell" && delta_to_mean < -SIGNIFICANT) // undersold
+				var drop = delta_to_mean.multiply(0.5f);
+				belief.drop(drop);// SHIFT towards mean
+				// belief.x -= delta_to_mean / 2; 
+				// belief.y -= delta_to_mean / 2;
+			} else if (act == "sell" && delta_to_mean.less(SIGNIFICANT_MONEY.multiply(-1.0f))) // undersold
 			{
-				belief.x -= delta_to_mean / 2; // SHIFT towards mean
-				belief.y -= delta_to_mean / 2;
+				var drop = delta_to_mean.multiply(0.5f);
+				belief.drop(drop);
 			}
-
-			belief.x += wobble * mean; // increase the belief's certainty
-			belief.y -= wobble * mean;
+			belief.raise(mean.multiply(wobble),LIMIT.LOWER);
+			belief.drop(mean.multiply(wobble),LIMIT.UPPER);
+			// belief.x += wobble * mean; // increase the belief's certainty
+			// belief.y -= wobble * mean;
 		} else {
-			belief.x -= delta_to_mean / 2; // SHIFT towards the mean
-			belief.y -= delta_to_mean / 2;
+
+			belief.drop(delta_to_mean.multiply(0.5f));
+			// belief.x -= delta_to_mean / 2; // SHIFT towards the mean
+			// belief.y -= delta_to_mean / 2;
 
 			boolean special_case = false;
 			float stocks = queryInventory(good);
@@ -137,33 +148,35 @@ public class BasicAgent extends Agent {
 
 			if (!special_case) {
 				// Don't know what else to do? Check supply vs. demand
-				float asks = bazaar.getHistory().asks.average(good, 1);
-				float bids = bazaar.getHistory().bids.average(good, 1);
+				ValueRT asks = bazaar.getHistory().asks.average(good, 1);
+				ValueRT bids = bazaar.getHistory().bids.average(good, 1);
 
 				// supply_vs_demand: 0=balance, 1=all supply, -1=all demand
-				float supply_vs_demand = (asks - bids) / (asks + bids);
+				double supply_vs_demand = (asks.as() - bids.as()) / (asks.as() + bids.as());
 
 				// too much supply, or too much demand
 				if (supply_vs_demand > SIG_IMBALANCE || supply_vs_demand < -SIG_IMBALANCE) {
 					// too much supply: lower price
 					// too much demand: raise price
 
-					float new_mean = mean_price * (1 - supply_vs_demand);
-					delta_to_mean = mean - new_mean;
-
-					belief.x -= delta_to_mean / 2; // SHIFT towards anticipated new mean
-					belief.y -= delta_to_mean / 2;
+					var new_mean = mean_price.multiply(1 - supply_vs_demand);
+					delta_to_mean = mean.subtract(new_mean);
+					belief.drop(delta_to_mean.multiply(0.5f));
+					// belief.x -= delta_to_mean / 2; // SHIFT towards anticipated new mean
+					// belief.y -= delta_to_mean / 2;
 				}
 			}
 
-			belief.x -= wobble * mean; // decrease the belief's certainty
-			belief.y += wobble * mean;
+			belief.drop(mean.multiply(wobble),LIMIT.LOWER);
+			belief.raise(mean.multiply(wobble),LIMIT.UPPER);
+			// belief.x -= wobble * mean; // decrease the belief's certainty
+			// belief.y += wobble * mean;
 		}
 
-		if (belief.x < MIN_PRICE) {
-			belief.x = MIN_PRICE;
-		} else if (belief.y < MIN_PRICE) {
-			belief.y = MIN_PRICE;
+		if (belief.getLower().less(MIN_PRICE)) {
+			belief.setLower(MIN_PRICE);
+		} else if (belief.getUpper().less(MIN_PRICE)) {
+			belief.setUpper(MIN_PRICE);
 		}
 	}
 
@@ -189,7 +202,7 @@ public class BasicAgent extends Agent {
 	public void consume(String commodity, float amount, float chance) {
 		if (chance >= 1.0 || Math.random() < chance) {
 			if (commodity == "money") {
-				money -= amount;
+				money = money.subtract(Money.from(Currency.DEFAULT, amount));
 			} else {
 				changeInventory(commodity, -amount);
 			}
