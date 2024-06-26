@@ -1,5 +1,7 @@
 package org.mercatia.bazaar.utils;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.List;
 
 import org.mercatia.bazaar.agent.Agent;
@@ -12,25 +14,22 @@ import org.mercatia.bazaar.currency.Money;
  */
 public class Quick {
 
-	@Deprecated
-	public static Money avgf(Money a, Money b) {
-		return Money.from(a.getCurrency(), avgf(a.as(), b.as()));
+	public static double avg(double a, double b) {
+		return (a + b) / 2.0;
 	}
 
-	public static double avgf(double a, double b) {
-		return (a + b) / 2;
-	}
-
-	public static double listAvgf(List<Double> list) {
-		double avg = 0;
+	public static double listAvg(List<Double> list) {
+		double avg = 0.0;
 		for (double j : list) {
 			avg += j;
 		}
 		avg /= list.size();
-		return avg;
+		var r = new BigDecimal(avg);
+		r = r.setScale(2,RoundingMode.HALF_DOWN);
+		return r.doubleValue();
 	}
 
-	public static double _minArr(List<Double> list) {
+	public static double listMin(List<Double> list) {
 		double min = Double.POSITIVE_INFINITY;
 		for (double j : list) {
 			min = Math.min(min, j);
@@ -38,7 +37,7 @@ public class Quick {
 		return min;
 	}
 
-	public static <T extends Range.RangeType<T>> T minArr(List<T> list) {
+	public static <T extends Range.RangeType<T>> T listMinR(List<T> list) {
 		var eg = list.get(0);
 		double min = Double.POSITIVE_INFINITY;
 		for (var j : list) {
@@ -47,7 +46,7 @@ public class Quick {
 		return eg.toNew(min);
 	}
 
-	public static <T extends Range.RangeType<T>> T maxArr(List<T> list) {
+	public static <T extends Range.RangeType<T>> T listMaxR(List<T> list) {
 		var eg = list.get(0);
 		double min = Double.NEGATIVE_INFINITY;
 		for (var j : list) {
@@ -56,13 +55,13 @@ public class Quick {
 		return eg.toNew(min);
 	}
 
-	public static float _maxArr(List<Float> list) {
-		float max = Float.NEGATIVE_INFINITY;
-		for (float j : list) {
-			max = Math.max(max, j);
-		}
-		return max;
-	}
+	// public static float _maxArr(List<Float> list) {
+	// 	float max = Float.NEGATIVE_INFINITY;
+	// 	for (float j : list) {
+	// 		max = Math.max(max, j);
+	// 	}
+	// 	return max;
+	// }
 
 	/**
 	 * Turns a number into a string with the specified number of decimal points

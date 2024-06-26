@@ -5,7 +5,6 @@ import java.util.HashMap;
 import java.util.Timer;
 
 import org.mercatia.bazaar.Economy;
-import org.mercatia.bazaar.Transport;
 import org.mercatia.danp.DoranParberryEconomy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,27 +12,33 @@ import org.slf4j.LoggerFactory;
 import io.vertx.core.Vertx;
 
 public class App {
-    
+
     static Logger logger = LoggerFactory.getLogger(App.class);
 
     public static void main(String[] args) {
         Vertx vertx = Vertx.vertx();
 
+        var world = new HashMap<String, Economy>();
 
-        logger.info("Hello");
+        // var tx = Transport.configure();
 
-        var world = new HashMap<String,Economy>();
+        var econ = new DoranParberryEconomy("EcoOne").configure(vertx);
+        world.put("EcoOne", econ);
 
-        var tx = Transport.configure();
+        var bus = vertx.eventBus();
 
-        world.put("EcoOne",new DoranParberryEconomy());
+        for (var e : world.entrySet()) {
+            var name = e.getKey();
+            var economy = e.getValue();
+            economy.configure(vertx);
+            bus.consumer("economy/" + name + "/outgoing", message -> {
+                System.out.println("I have received a message: " + message.body());
+            });
 
-        for (var e: world.values()){
-            e.configure(tx);
-          
-            var timerTask = new EconomyTimer(e);
-            Timer timer = new Timer(false);
-            timer.scheduleAtFixedRate(timerTask, 0, 500);
+            long timerId = vertx.setPeriodic(5000, id -> {
+                logger.info("tick "+"economy/" + name + "/incoming");
+                bus.send("economy/" + name + "/incoming", "tick");
+            });
         }
 
         vertx.deployVerticle(new Server(world));

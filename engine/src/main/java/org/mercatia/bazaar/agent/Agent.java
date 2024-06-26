@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.mercatia.Jsonable;
 import org.mercatia.bazaar.Good;
@@ -80,22 +81,31 @@ public abstract class Agent implements Jsonable {
     public Money money;
     public Money moneyLastRound;
 
-    public float inventorySpace;
+    public double inventorySpace;
     public boolean inventoryFull;
     public boolean destroyed;
 
     Inventory inventory;
     Map<String, Range<Money>> priceBeliefs;
     Map<String, List<Money>> observedTradingRange;
-    float profit = 0.0f;
+    double profit = 0.0f;
     int lookback = 15;
 
-    protected record AgentJSON(String id, String name, double money, Jsony inventory) implements Jsony {
+    protected record AgentJSON(String id, String name, double money, Jsony inventory, Map<String, Jsony> priceBeliefs,
+            Map<String, List<Jsony>> observeredTradingRange) implements Jsony {
     };
 
     public Jsony jsonify() {
         var inv = inventory.jsonify();
-        return new AgentJSON(id.toString(), name, money.as(), inv);
+
+        Map<String, Jsony> pv = priceBeliefs.entrySet().stream().collect(Collectors.toMap(e -> e.getKey(),
+                v -> v.getValue().jsonify()));
+
+        Map<String, List<Jsony>> otr = observedTradingRange.entrySet().stream()
+                .collect(Collectors.toMap(e -> e.getKey(),
+                        v -> v.getValue().stream().map(x -> x.jsonify()).collect(Collectors.toList())));
+
+        return new AgentJSON(id.toString(), name, money.as(), inv, pv, otr);
     }
 
     public String toString() {
@@ -155,19 +165,19 @@ public abstract class Agent implements Jsonable {
 
     public abstract void updatePriceModel(Market market, String act, String goodid, boolean success);
 
-    public abstract Offer createBid(Market market, String good, float limit);
+    public abstract Offer createBid(Market market, String good, double limit);
 
-    public abstract Offer createAsk(Market market, String commodity, float limit);
+    public abstract Offer createAsk(Market market, String commodity, double limit);
 
-    public float queryInventory(String goodid) {
+    public double queryInventory(String goodid) {
         return inventory.query(goodid);
     }
 
-    public void changeInventory(String goodid, float delta) {
+    public void changeInventory(String goodid, double delta) {
         inventory.change(goodid, delta);
     }
 
-    // private float getInventorySpace()
+    // private double getInventorySpace()
     // {
     // return inventory.getEmptySpace();
     // }
@@ -191,7 +201,7 @@ public abstract class Agent implements Jsonable {
         if (trading_range != null) {
             double favorability = trading_range.positionInRange(mean);// Quick.positionInRange(mean, trading_range.x,
                                                                       // trading_range.y); // check defaults
-            // position_in_range: high means price is at a high point
+                                                                      // position_in_range: high means price is at a high point
 
             long amount_to_sell = Math.round(favorability * inventory.surplus(commodity));
             if (amount_to_sell < 1) {
@@ -225,9 +235,9 @@ public abstract class Agent implements Jsonable {
     }
 
     protected Range<Money> observeTradingRange(String good) {
-        List<Money> a = observedTradingRange.get(good);
-        Quick.minArr(a);
-        Range<Money> pt = new Range<>(Quick.minArr(a), Quick.maxArr(a));
+        List<Money> a = observedTradingRange.get(good);        
+        Range<Money> pt = new Range<>(Quick.listMinR(a), Quick.listMaxR(a));
+        System.out.println(pt);
         return pt;
     }
 }

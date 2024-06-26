@@ -10,13 +10,13 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class InventoryData {
 
 	@JsonProperty("max_size")
-	public float maxSize;
+	public double maxSize;
 	
 	@JsonProperty("ideal")
-	public Map<String, Float> ideal;
+	public Map<String, Double> ideal;
 
 	@JsonProperty("start")
-	public Map<String, Float> start;
+	public Map<String, Double> start;
 
 
 }

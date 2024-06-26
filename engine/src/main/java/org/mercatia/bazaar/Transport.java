@@ -16,6 +16,11 @@ import io.grpc.ManagedChannel;
 import io.grpc.StatusRuntimeException;
 
 public class Transport implements AutoCloseable, MarketEventListener {
+
+    public static enum Actions {
+        LIST_MARKETS
+    }
+
     static Logger logger = LoggerFactory.getLogger(Transport.class);
     private final TransportGrpc.TransportBlockingStub blockingStub;
     private Channel channel;
@@ -43,7 +48,6 @@ public class Transport implements AutoCloseable, MarketEventListener {
 
     public static Transport configure() {
 
-        
         logger.info("Configure....");
         // Create a communication channel to the server, known as a Channel. Channels are thread-safe
         // and reusable. It is common to create channels at the beginning of your application and reuse
@@ -72,9 +76,7 @@ public class Transport implements AutoCloseable, MarketEventListener {
 
     @Override
     public void agentBankrupt(AgentBankruptEvent event) {
-       
+
     }
-
-
 
 }

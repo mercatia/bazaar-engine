@@ -170,4 +170,52 @@ public class Money extends Range.RangeType<Money> {
         return as() < other.as();
     }
 
+    public Money average(Money other){
+        var sum = new BigDecimal(this.as()).add(new BigDecimal(other.as()));
+
+        var avg = sum.divide(new BigDecimal(2),2,RoundingMode.HALF_UP);
+        return this.toNew(avg.doubleValue());
+    }
+
+    private record J(String currency, double value) implements Jsony {
+    };
+
+    @Override
+    public Jsony jsonify() {
+        return new J(this.currency.getCurrencyName(), as());
+    }
+
+    @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((currency == null) ? 0 : currency.hashCode());
+        result = prime * result + (int) (unit ^ (unit >>> 32));
+        result = prime * result + (int) (fractional ^ (fractional >>> 32));
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+        if (obj == null)
+            return false;
+        if (getClass() != obj.getClass())
+            return false;
+        Money other = (Money) obj;
+        if (currency == null) {
+            if (other.currency != null)
+                return false;
+        } else if (!currency.equals(other.currency))
+            return false;
+        if (unit != other.unit)
+            return false;
+        if (fractional != other.fractional)
+            return false;
+        return true;
+    }
+
+
+    
 }

@@ -1,8 +1,10 @@
 package org.mercatia.bazaar.utils;
 
-public class Range<T extends Range.RangeType<T>> {
+import org.mercatia.Jsonable;
 
-    public static abstract class RangeType<F> {
+public class Range<T extends Range.RangeType<T>> implements Jsonable{
+
+    public static abstract class RangeType<F>  implements Jsonable{
         public abstract F add(F other);
 
         public abstract F subtract(F other);
@@ -117,6 +119,13 @@ public class Range<T extends Range.RangeType<T>> {
             }
         }
         return value;
+    }
+
+    private record J(double lower,double upper) implements Jsony{};
+
+    @Override
+    public Jsony jsonify() {
+        return new J(lower.as(),upper.as());
     }
 
 }

@@ -18,8 +18,8 @@ public class LogicBlacksmith extends GenericJob {
 
 	@Override
 	public void simulate(Market market) {
-		float food = queryInventory("food");
-		float metal = queryInventory("metal");
+		double food = queryInventory("food");
+		double metal = queryInventory("metal");
 
 		boolean has_food = food >= 1;
 		boolean has_metal = metal >= 1;

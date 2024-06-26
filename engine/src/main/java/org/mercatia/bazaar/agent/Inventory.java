@@ -10,23 +10,23 @@ import org.mercatia.bazaar.Good;
  */
 public class Inventory implements Jsonable {
 
-	public float maxSize = 0.0f;
-	private Map<String, Float> sizes;
-	private Map<String, Float> stuff;
-	private Map<String, Float> ideal;
+	public double maxSize = 0.0;
+	private Map<String, Double> sizes;
+	private Map<String, Double> stuff;
+	private Map<String, Double> ideal;
 
 	// key:commodity_id, val:amount
 	// ideal counts for each thing
 	// how much space each thing takes up
 	public Inventory() {
-		sizes = new HashMap<String, Float>();
-		stuff = new HashMap<String, Float>();
-		ideal = new HashMap<String, Float>();
+		sizes = new HashMap<>();
+		stuff = new HashMap<>();
+		ideal = new HashMap<>();
 		maxSize = 0;
 	}
 
 	
-	private record j(float maxSize, Map<String, Float> things) implements Jsony {
+	private record j(double maxSize, Map<String, Double> things) implements Jsony {
 	};
 
 	@Override
@@ -34,7 +34,7 @@ public class Inventory implements Jsonable {
 		return new j(maxSize,stuff);
 	}
 
-	protected Inventory(float maxSize, Map<String, Float> ideal, Map<String, Float> start, Map<String, Good> goods) {
+	protected Inventory(double maxSize, Map<String, Double> ideal, Map<String, Double> start, Map<String, Good> goods) {
 		this();
 		this.maxSize = maxSize;
 
@@ -46,7 +46,7 @@ public class Inventory implements Jsonable {
 			this.stuff.put(entry.getKey(), entry.getValue());
 		}
 
-		sizes = new HashMap<String, Float>();
+		sizes = new HashMap<>();
 		for (var good : goods.entrySet()) {
 			sizes.put(good.getKey(), good.getValue().size);
 		}
@@ -59,33 +59,33 @@ public class Inventory implements Jsonable {
 	 * @return
 	 */
 
-	public float query(String goodid) {
+	public double query(String goodid) {
 		if (stuff.containsKey(goodid)) {
 			return stuff.get(goodid);
 		}
 		return 0;
 	}
 
-	public float ideal(String goodid) {
+	public double ideal(String goodid) {
 		if (ideal.containsKey(goodid)) {
 			return ideal.get(goodid);
 		}
 		return 0;
 	}
 
-	public float getEmptySpace() {
+	public double getEmptySpace() {
 		return maxSize - getUsedSpace();
 	}
 
-	public float getUsedSpace() {
-		float space_used = 0.0f;
+	public double getUsedSpace() {
+		double space_used = 0.0f;
 		for (String key : stuff.keySet()) {
 			space_used += stuff.get(key) * sizes.get(key);
 		}
 		return space_used;
 	}
 
-	public float getCapacityFor(String goodid) {
+	public double getCapacityFor(String goodid) {
 		if (sizes.containsKey(goodid)) {
 			return sizes.get(goodid);
 		}
@@ -99,11 +99,11 @@ public class Inventory implements Jsonable {
 	 * @param delta_     amount added
 	 */
 
-	public void change(String goodid, float delta) {
-		float result;
+	public void change(String goodid, double delta) {
+		double result;
 
 		if (stuff.containsKey(goodid)) {
-			float amount = stuff.get(goodid);
+			double amount = stuff.get(goodid);
 			result = amount + delta;
 		} else {
 			result = delta;
@@ -123,12 +123,12 @@ public class Inventory implements Jsonable {
 	 * @return
 	 */
 
-	public float surplus(String goodid) {
-		float amt = query(goodid);
+	public double surplus(String goodid) {
+		double amt = query(goodid);
 		if (ideal.containsKey(goodid)) {
-			float idealAmt = ideal.get(goodid);
+			double idealAmt = ideal.get(goodid);
 			if (amt > idealAmt) {
-				return (amt - idealAmt);
+				return Math.floor(amt - idealAmt);
 			}
 		}
 
@@ -142,14 +142,14 @@ public class Inventory implements Jsonable {
 	 * @return
 	 */
 
-	public float shortage(String goodid) {
+	public double shortage(String goodid) {
 		if (!stuff.containsKey(goodid)) {
 			return 0;
 		}
-		float amt = query(goodid);
-		float idealAmt = ideal.get(goodid);
+		double amt = query(goodid);
+		double idealAmt = ideal.get(goodid);
 		if (amt < idealAmt) {
-			return (idealAmt - amt);
+			return Math.floor(idealAmt - amt);
 		}
 		return 0;
 	}

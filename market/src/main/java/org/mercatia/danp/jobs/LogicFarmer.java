@@ -20,8 +20,8 @@ public class LogicFarmer extends GenericJob
 	@Override
 	public void simulate(Market market)
 	{
-		float wood = queryInventory("wood");
-		float tools = queryInventory("tools");
+		double wood = queryInventory("wood");
+		double tools = queryInventory("tools");
 		
 		boolean has_wood = wood >= 1;
 		boolean has_tools = tools >= 1;

@@ -20,7 +20,7 @@ public abstract class GenericJob extends BasicAgent
 		super(id,data, goods);
 	}
 
-	public void makeRoomFor(Market market, BasicAgent agent, String good, float amt)
+	public void makeRoomFor(Market market, BasicAgent agent, String good, double amt)
 	{
 
 		String toDrop = market.getCheapestGood(10, Arrays.asList(good));

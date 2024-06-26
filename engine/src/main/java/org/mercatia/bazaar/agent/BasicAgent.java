@@ -18,12 +18,12 @@ import org.mercatia.bazaar.utils.Range.LIMIT;
  * @author
  */
 public class BasicAgent extends Agent {
-	public static float SIGNIFICANT = 0.25f; // 25% more or less is "significant"
+	public static double SIGNIFICANT = 0.25f; // 25% more or less is "significant"
 	public static Money SIGNIFICANT_MONEY = Money.from(Currency.DEFAULT, 0.25f);
 
-	public static float SIG_IMBALANCE = 0.33f;
-	public static float LOW_INVENTORY = 0.1f; // 10% of ideal inventory = "LOW"
-	public static float HIGH_INVENTORY = 2.0f; // 200% of ideal inventory = "HIGH"
+	public static double SIG_IMBALANCE = 0.33f;
+	public static double LOW_INVENTORY = 0.1f; // 10% of ideal inventory = "LOW"
+	public static double HIGH_INVENTORY = 2.0f; // 200% of ideal inventory = "HIGH"
 
 	public static Money MIN_PRICE = Money.from(Currency.DEFAULT, 0.01f); // lowest possible price
 
@@ -31,24 +31,24 @@ public class BasicAgent extends Agent {
 		super(id, data, goods);
 	}
 
-	public Offer createBid(Market bazaar, String good, float limit) {
+	public Offer createBid(Market bazaar, String good, double limit) {
 		Money bidPrice = super.determinePriceOf(good);
-		float ideal = determinePurchaseQuantity(bazaar, good);
+		double ideal = determinePurchaseQuantity(bazaar, good);
 
 		// can't buy more than limit
-		float quantityToBuy = ideal > limit ? limit : ideal;
+		double quantityToBuy = ideal > limit ? limit : ideal;
 		if (quantityToBuy > 0) {
 			return new Offer(id, good, quantityToBuy, bidPrice);
 		}
 		return null;
 	}
 
-	public Offer createAsk(Market bazaar, String commodity, float limit) {
+	public Offer createAsk(Market bazaar, String commodity, double limit) {
 		Money ask_price = determinePriceOf(commodity);
-		float ideal = determineSaleQuantity(bazaar, commodity);
+		double ideal = determineSaleQuantity(bazaar, commodity);
 
 		// can't sell less than limit
-		float quantity_to_sell = ideal < limit ? limit : ideal;
+		double quantity_to_sell = ideal < limit ? limit : ideal;
 		if (quantity_to_sell > 0) {
 			return new Offer(id, commodity, quantity_to_sell, ask_price);
 		}
@@ -57,25 +57,25 @@ public class BasicAgent extends Agent {
 
 	public void generateOffers(Market bazaar, String commodity) {
 		Offer offer;
-		float surplus = inventory.surplus(commodity);
+		double surplus = inventory.surplus(commodity);
 		if (surplus >= 1) {
 			offer = createAsk(bazaar, commodity, 1);
 			if (offer != null) {
 				bazaar.ask(offer);
 			}
 		} else {
-			float shortage = inventory.shortage(commodity);
-			float space = inventory.getEmptySpace();
-			float unit_size = inventory.getCapacityFor(commodity);
+			double shortage = inventory.shortage(commodity);
+			double space = inventory.getEmptySpace();
+			double unit_size = inventory.getCapacityFor(commodity);
 
 			if (shortage > 0 && space >= unit_size) {
-				float limit = 0;
+				double limit = 0;
 				if ((shortage * unit_size) <= space) // enough space for ideal order
 				{
 					limit = shortage;
 				} else // not enough space for ideal order
 				{
-					limit = (float) Math.floor(space / shortage);
+					limit = (double) Math.floor(space / shortage);
 				}
 
 				if (limit > 0) {
@@ -106,7 +106,7 @@ public class BasicAgent extends Agent {
 
 		Range<Money> belief = getPriceBelief(good);
 		Money mean = belief.mean();
-		float wobble = 0.05f;
+		double wobble = 0.05f;
 
 		var delta_to_mean = mean.subtract(mean_price);
 
@@ -133,8 +133,8 @@ public class BasicAgent extends Agent {
 			// belief.y -= delta_to_mean / 2;
 
 			boolean special_case = false;
-			float stocks = queryInventory(good);
-			float ideal = inventory.ideal(good);
+			double stocks = queryInventory(good);
+			double ideal = inventory.ideal(good);
 
 			if (act == "buy" && stocks < LOW_INVENTORY * ideal) {
 				// very low on inventory AND can't buy
@@ -185,21 +185,21 @@ public class BasicAgent extends Agent {
 		// this.
 	}
 
-	public void produce(String commodity, float amount, float chance) {
+	public void produce(String commodity, double amount, double chance) {
 		if (chance >= 1.0 || Math.random() < chance) {
 			changeInventory(commodity, amount);
 		}
 	}
 
-	public void produce(String commodity, float amount) {
+	public void produce(String commodity, double amount) {
 		produce(commodity, amount, 1.0f);
 	}
 
-	public void consume(String commodity, float amount) {
+	public void consume(String commodity, double amount) {
 		consume(commodity, amount, 1.0f);
 	}
 
-	public void consume(String commodity, float amount, float chance) {
+	public void consume(String commodity, double amount, double chance) {
 		if (chance >= 1.0 || Math.random() < chance) {
 			if (commodity == "money") {
 				money = money.subtract(Money.from(Currency.DEFAULT, amount));

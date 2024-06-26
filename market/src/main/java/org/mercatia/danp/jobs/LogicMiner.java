@@ -20,8 +20,8 @@ public class LogicMiner extends GenericJob {
 
 	@Override
 	public void simulate(Market market) {
-		float food = queryInventory("food");
-		float tools = queryInventory("tools");
+		double food = queryInventory("food");
+		double tools = queryInventory("tools");
 
 		boolean has_food = food >= 1;
 		boolean has_tools = tools >= 1;

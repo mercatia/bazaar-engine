@@ -172,7 +172,7 @@ public class MarketImpl extends EventsOrigin implements Market{
 	 * @return
 	 */
 
-	public String getHottestGood(float minimum, int range) {
+	public String getHottestGood(double minimum, int range) {
 		String best_market = "";
 		double best_ratio = Double.NEGATIVE_INFINITY;
 		for (String goodid : _goodTypes) {
@@ -320,10 +320,10 @@ public class MarketImpl extends EventsOrigin implements Market{
 
 		int successfulTrades = 0; // # of successful trades this round
 		Money moneyTraded = Money.NONE(); // amount of money traded this round
-		float unitsTraded = 0; // amount of goods traded this round
+		double unitsTraded = 0; // amount of goods traded this round
 		Money avgPrice = Money.NONE(); // avg clearing price this round
-		float numAsks = 0;
-		float numBids = 0;
+		double numAsks = 0;
+		double numBids = 0;
 
 		int failsafe = 0;
 
@@ -341,8 +341,8 @@ public class MarketImpl extends EventsOrigin implements Market{
 			Offer buyer = bids.get(0);
 			Offer seller = asks.get(0);
 
-			float quantity_traded = Math.min(seller.units, buyer.units);
-			Money clearing_price = Quick.avgf(seller.getUnitPrice(), buyer.getUnitPrice());
+			double quantity_traded = Math.min(seller.units, buyer.units);
+			Money clearing_price = Money.NONE();// Quick.avg(seller.getUnitPrice(), buyer.getUnitPrice());
 
 			if (quantity_traded > 0) {
 				// transfer the goods for the agreed price
@@ -413,7 +413,7 @@ public class MarketImpl extends EventsOrigin implements Market{
 		String curr_class = "";
 		String last_class = "";
 		List<Float> list = null;
-		float avg_profit = 0;
+		double avg_profit = 0;
 
 		// for (Agent a: _agents.values())
 		// {
@@ -440,7 +440,7 @@ public class MarketImpl extends EventsOrigin implements Market{
 
 	}
 
-	private void transferGood(String good, float units, ID seller_id, ID buyer_id) {
+	private void transferGood(String good, double units, ID seller_id, ID buyer_id) {
 		Agent seller = _agents.get(seller_id);
 		Agent buyer = _agents.get(buyer_id);
 		seller.changeInventory(good, -units);

@@ -68,4 +68,11 @@ public class ValueRT extends Range.RangeType<ValueRT> {
         return value<other.value;
     }
 
+    private record J(double value) implements Jsony{};
+
+    @Override
+    public Jsony jsonify() {
+        return new J(value);
+    }
+
 }

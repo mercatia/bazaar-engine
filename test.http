@@ -1,14 +1,14 @@
-GET http://127.0.0.1:8080/economy/EcoOne/market/WibbleCity/
+GET http://localhost:3000/economy/EcoOne/market/WibbleCity/
 content-type: application/json
 
 ###
 
-GET http://127.0.0.1:8080/economy/EcoOne/market/WibbleCity/agent/
+GET http://127.0.0.1:3000/economy/EcoOne/market/WibbleCity/agent/
 content-type: application/json
 
 ###
 
-GET http://127.0.0.1:8080/economy/EcoOne/market/WibbleCity/agent/0e7a8614-2171-4658-9753-eeb2cd50e423/
+GET http://127.0.0.1:3000/economy/EcoOne/market/WibbleCity/agent/3e1a854e-7c2d-406f-976c-0b728787f66e/
 content-type: application/json
 
 

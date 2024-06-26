@@ -3,12 +3,14 @@ package org.mercatia.bazaar;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-
-import org.slf4j.*;
+import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.EventBus;
 import org.mercatia.bazaar.agent.Agent;
 import org.mercatia.bazaar.agent.AgentData;
 import org.mercatia.bazaar.agent.LogicBuilder;
 import org.mercatia.bazaar.impl.MarketImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class Economy {
 	private Map<String, Market> markets;
@@ -16,15 +18,22 @@ public abstract class Economy {
 	protected MarketData startingMarketData;
 	protected AgentData.Factory agentFactory;
 
+	protected String name;
+
 	static Logger logger = LoggerFactory.getLogger(Transport.class);
 
 
 
-	public Economy() {
+	public Economy(String name) {
 		this.markets = new HashMap<String, Market>();
+		this.name = name;
 	}
 
-	public abstract void configure(Transport transport);
+	public abstract Economy configure(Vertx vertx);
+
+	public String getName(){
+		return this.name;
+	}
 
 	public void addMarket(Market m) {
 		if (!markets.containsKey(m.getName())) {

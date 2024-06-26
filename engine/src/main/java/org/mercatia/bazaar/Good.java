@@ -9,7 +9,7 @@ public class Good {
 	public String id = ""; // string id of good
 
 	@JsonProperty("size")
-	public float size = 1.0f; // inventory size taken up
+	public double size = 1.0; // inventory size taken up
 
 	public Good() {
 
