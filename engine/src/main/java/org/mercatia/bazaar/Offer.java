@@ -8,6 +8,11 @@ import org.mercatia.bazaar.currency.Money;
 
  */
 public class Offer implements Jsonable {
+
+	public static enum Type {
+		BUY, SELL
+	};
+
 	public String good; // the thing offered
 	public double units; // how many units
 	private Money unit_price; // price per unit
@@ -22,10 +27,15 @@ public class Offer implements Jsonable {
 		this.good = commodity;
 		this.units = units;
 		this.unit_price = unit_price;
+
+		if (unit_price.zeroOrLess() || units < 1.0) {
+			throw new RuntimeException("Offering to sell " + units + " of " + commodity + " for " + unit_price);
+		}
+
 	}
 
 	public String toString() {
-		return "(" + agent_id + "): " + good + "x " + units + " @ " + unit_price;
+		return "(" + agent_id + ") " + good + " " + units + " of @ " + unit_price;
 	}
 
 	private record J(String good, double units, double unit_price, String offeringAgent) implements Jsony {

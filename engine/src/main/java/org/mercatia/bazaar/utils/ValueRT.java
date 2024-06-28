@@ -75,4 +75,9 @@ public class ValueRT extends Range.RangeType<ValueRT> {
         return new J(value);
     }
 
+    @Override
+    public ValueRT clone() {
+       return new ValueRT(value);
+    }
+
 }

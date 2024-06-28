@@ -11,16 +11,18 @@ import org.mercatia.Jsonable;
 import org.mercatia.bazaar.Good;
 import org.mercatia.bazaar.Market;
 import org.mercatia.bazaar.Offer;
+import org.mercatia.bazaar.Transport;
+import org.mercatia.bazaar.currency.Currency;
 import org.mercatia.bazaar.currency.Money;
 import org.mercatia.bazaar.utils.Quick;
 import org.mercatia.bazaar.utils.Range;
 
+import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.json.JsonObject;
+
 /**
- * The most fundamental agent class, and has as little implementation as
- * possible.
- * In most cases you should start by extending Agent instead of this.
  * 
- * @author larsiusprime
  */
 public abstract class Agent implements Jsonable {
 
@@ -76,8 +78,11 @@ public abstract class Agent implements Jsonable {
 
     }
 
+    protected EventBus eventBus;
+    protected String addr;
     public ID id; // unique integer identifier
     public String name; // string identifier, "famer", "woodcutter", etc.
+
     public Money money;
     public Money moneyLastRound;
 
@@ -90,6 +95,9 @@ public abstract class Agent implements Jsonable {
     Map<String, List<Money>> observedTradingRange;
     double profit = 0.0f;
     int lookback = 15;
+
+    public static Money MIN_PRICE = Money.from(Currency.DEFAULT, 0.01); // lowest possible price
+    public static Money MAX_PRICE = null;
 
     protected record AgentJSON(String id, String name, double money, Jsony inventory, Map<String, Jsony> priceBeliefs,
             Map<String, List<Jsony>> observeredTradingRange) implements Jsony {
@@ -133,7 +141,7 @@ public abstract class Agent implements Jsonable {
         observedTradingRange = new HashMap<String, List<Money>>();
     }
 
-    public void init(Market market) {
+    public void init(Market market, EventBus eventBus) {
         List<Good> listGoods = market.getGoods();
         for (Good good : listGoods) {
             List<Money> trades = new ArrayList<Money>();
@@ -144,8 +152,33 @@ public abstract class Agent implements Jsonable {
 
             // set initial price belief & observed trading range
             observedTradingRange.put(good.id, trades);
-            priceBeliefs.put(good.id, new Range<Money>(price.multiply(0.5f), price.multiply(1.5f)));
+            priceBeliefs.put(good.id,
+                    new Range<Money>(price.multiply(0.5f), price.multiply(1.5f), MIN_PRICE, MAX_PRICE));
         }
+
+        this.eventBus = eventBus;
+        this.addr = String.format("economy/%s/market/%s/agent/%s", market.getEconomy().getName(), market.getName(),
+                this.id.toString());
+
+        MessageConsumer<JsonObject> consumer = eventBus.consumer(this.addr);
+        consumer.handler(message -> {
+            var busMsg = Transport.IntraMessage.busmsg(message);
+            if (busMsg.isAction()) {
+                var reply = new JsonObject();
+                switch (busMsg.getAction()) {
+                    case GET_AGENT:
+                        reply = JsonObject.mapFrom(this.jsonify());
+                        break;
+                    default:
+                        // logger.error("Unknown action");
+                        message.fail(500, "Unknown action ");
+                }
+
+                message.reply(reply);
+            }
+
+        });
+
     }
 
     public ID getId() {
@@ -177,11 +210,6 @@ public abstract class Agent implements Jsonable {
         inventory.change(goodid, delta);
     }
 
-    // private double getInventorySpace()
-    // {
-    // return inventory.getEmptySpace();
-    // }
-
     public boolean isInventoryFull() {
         return inventory.getEmptySpace() == 0;
     }
@@ -201,7 +229,8 @@ public abstract class Agent implements Jsonable {
         if (trading_range != null) {
             double favorability = trading_range.positionInRange(mean);// Quick.positionInRange(mean, trading_range.x,
                                                                       // trading_range.y); // check defaults
-                                                                      // position_in_range: high means price is at a high point
+                                                                      // position_in_range: high means price is at a
+                                                                      // high point
 
             long amount_to_sell = Math.round(favorability * inventory.surplus(commodity));
             if (amount_to_sell < 1) {
@@ -235,9 +264,8 @@ public abstract class Agent implements Jsonable {
     }
 
     protected Range<Money> observeTradingRange(String good) {
-        List<Money> a = observedTradingRange.get(good);        
+        List<Money> a = observedTradingRange.get(good);
         Range<Money> pt = new Range<>(Quick.listMinR(a), Quick.listMaxR(a));
-        System.out.println(pt);
         return pt;
     }
 }

@@ -107,7 +107,12 @@ public class Quick {
 		double min = a < b ? a : b;
 		double max = a < b ? b : a;
 
-		return (double) (Math.random() * (max - min)) + min;
+		var v =(double) (Math.random() * (max - min)) + min;
+		if (v<0.0){
+			throw new RuntimeException("R2 "+a+ " "+b+" "+v);
+			
+		}
+		return v;
 	}
 
 	public static int sortAgentAlpha(Agent a, Agent b) {

@@ -1,3 +1,11 @@
+
+
+
+GET http://localhost:3000/economy/EcoOne/market/
+content-type: application/json
+
+###
+
 GET http://localhost:3000/economy/EcoOne/market/WibbleCity/
 content-type: application/json
 
@@ -8,7 +16,7 @@ content-type: application/json
 
 ###
 
-GET http://127.0.0.1:3000/economy/EcoOne/market/WibbleCity/agent/3e1a854e-7c2d-406f-976c-0b728787f66e/
+GET http://127.0.0.1:3000/economy/EcoOne/market/WibbleCity/agent/8dd7dce5-7089-4661-a068-cef54924ec99/
 content-type: application/json
 
 

@@ -1,18 +1,23 @@
 package org.mercatia.app;
 
+import static org.mercatia.bazaar.Transport.Actions.GET_AGENT;
+import static org.mercatia.bazaar.Transport.Actions.GET_ALL_AGENTS;
+import static org.mercatia.bazaar.Transport.Actions.GET_MARKET;
+import static org.mercatia.bazaar.Transport.Actions.LIST_MARKETS;
+
 import java.util.Map;
 
 import org.mercatia.bazaar.Economy;
 import org.mercatia.bazaar.Transport;
+import org.mercatia.bazaar.Transport.BusMsgOptions;
+import org.mercatia.bazaar.Transport.IntraMessage;
 import org.mercatia.bazaar.agent.Agent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.vertx.core.AbstractVerticle;
-import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
@@ -28,11 +33,11 @@ public class Server extends AbstractVerticle {
     private EventBus eventBus;
 
     public Server(Map<String, Economy> world) {
+        super();
         this.world = world;
-        eventBus = vertx.eventBus();
 
     }
-    DeliveryOptions options = new DeliveryOptions().setSendTimeout(10000);
+
     @Override
     public void start() throws Exception {
         logger.info("Vertx Router");
@@ -60,114 +65,73 @@ public class Server extends AbstractVerticle {
 
         vertx.createHttpServer().requestHandler(router).listen(3000);
 
+        eventBus = vertx.eventBus();
+
     }
 
     private void handleListMarkets(RoutingContext routingContext) {
-        HttpServerResponse response = routingContext.response();
         String economdyID = routingContext.request().getParam("econ");
+
         var addr = String.format("economy/%s", economdyID);
-        eventBus.request(addr, Transport.Actions.LIST_MARKETS, options)
-                .onComplete(ar -> {
-                    if (ar.succeeded()) {
-                        JsonObject data = (JsonObject) ar.result().body();
-                      
-                        // JsonArray arr = new JsonArray();
-                        // econ.getMarketNames().forEach((v) -> arr.add(v));
-                        routingContext.response().putHeader("content-type", "application/json").end(data.encodePrettily());
-            
+        var m = IntraMessage.actionMessage(LIST_MARKETS, 10000);
 
-                    } else {
-                        sendError(404, response);
-                    }
-                });
-
-    }
-
-    private void tick(RoutingContext routingContext) {
-        String econID = routingContext.request().getParam("econ");
-        HttpServerResponse response = routingContext.response();      
-
-        if (econID == null) {
-            sendError(400, response);
-        } else {
-
-            var addr = String.format("economy/%s", econID);
-            eventBus.request(addr, Transport.Actions.TICK, options)
-            .onComplete(ar -> {
-                if (ar.succeeded()) {
-                    JsonObject data = (JsonObject) ar.result().body();
-                    routingContext.response().putHeader("content-type", "application/json").end(data.encodePrettily());
-                } else {
-                    sendError(404, response);
-                }
-            });
-        }
-    }
-
-    private void handleGetEconomy(RoutingContext routingContext) {
-        String productID = routingContext.request().getParam("econ");
-        HttpServerResponse response = routingContext.response();
-        if (productID == null) {
-            sendError(400, response);
-        } else {
-            var econ = this.world.get(productID);
-            if (econ == null) {
-                sendError(404, response);
-            } else {
-                var text = econ.getClass().toString();
-                response.putHeader("content-type", "application/json").end(text);
-            }
-        }
+        handleRequest(addr, m, routingContext);
     }
 
     private void handleGetMarket(RoutingContext routingContext) {
         String economdyID = routingContext.request().getParam("econ");
         String marketID = routingContext.request().getParam("market");
         HttpServerResponse response = routingContext.response();
+
         if (economdyID == null || marketID == null) {
             sendError(400, response);
         } else {
-            var econ = this.world.get(economdyID);
-            if (econ == null) {
-                sendError(404, response);
-            } else {
-                var market = econ.getMarket(marketID);
-                if (market == null) {
-                    sendError(404, response);
-                }
+            var addr = String.format("economy/%s/market/%s", economdyID, marketID);
+            var m = IntraMessage.actionMessage(GET_MARKET, 10000);
 
-                var obj = JsonObject.mapFrom(market.jsonify());
-                response.putHeader("content-type", "application/json").end(obj.encodePrettily());
-            }
+            handleRequest(addr, m, routingContext);
         }
+
+    }
+
+    private void tick(RoutingContext routingContext) {
+        String econID = routingContext.request().getParam("econ");
+        HttpServerResponse response = routingContext.response();
+
+        if (econID == null) {
+            sendError(400, response);
+        } else {
+            var m = IntraMessage.actionMessage(Transport.Actions.TICK);
+            var addr = String.format("economy/%s", econID);
+
+            handleRequest(addr, m, routingContext);
+        }
+    }
+
+    private void handleGetEconomy(RoutingContext routingContext) {
+        String productID = routingContext.request().getParam("econ");
+
+        if (productID == null) {
+            routingContext.fail(400);
+        } else {
+            var addr = String.format("economy/%s/", productID);
+            var m = IntraMessage.actionMessage(GET_ALL_AGENTS, 10000);
+            handleRequest(addr, m, routingContext);
+
+        }
+
     }
 
     private void handleGetAllAgent(RoutingContext routingContext) {
         String economdyID = routingContext.request().getParam("econ");
         String marketID = routingContext.request().getParam("market");
 
-        HttpServerResponse response = routingContext.response();
         if (economdyID == null || marketID == null) {
             routingContext.fail(400);
-        }
-
-        var econ = this.world.get(economdyID);
-        if (econ == null) {
-            sendError(404, response);
         } else {
-            var market = econ.getMarket(marketID);
-            if (market == null) {
-                sendError(404, response);
-            }
-
-            var arr = new JsonArray();
-            market.getAgents().forEach(v -> {
-                var agent = market.getAgent(v);
-                var json = JsonObject.mapFrom(agent.jsonify());
-                arr.add(json);
-            });
-
-            response.putHeader("content-type", "application/json").end(arr.encodePrettily());
+            var addr = String.format("economy/%s/market/%s", economdyID, marketID);
+            var m = IntraMessage.actionMessage(GET_ALL_AGENTS, 10000);
+            handleRequest(addr, m, routingContext);
         }
 
     }
@@ -177,28 +141,13 @@ public class Server extends AbstractVerticle {
         String marketID = routingContext.request().getParam("market");
         String agentID = routingContext.request().getParam("agentid");
 
-        HttpServerResponse response = routingContext.response();
         if (economdyID == null || marketID == null) {
             routingContext.fail(400);
-        }
-
-        var econ = this.world.get(economdyID);
-        if (econ == null) {
-            sendError(404, response);
         } else {
-            var market = econ.getMarket(marketID);
-            if (market == null) {
-                sendError(404, response);
-            }
+            var addr = String.format("economy/%s/market/%s/agent/%s", economdyID, marketID, agentID);
 
-            var aid = Agent.ID.from(agentID);
-            logger.info(aid.toString());
-
-            var agent = market.getAgent(aid);
-
-            var obj = JsonObject.mapFrom(agent.jsonify());
-
-            response.putHeader("content-type", "application/json").end(obj.encodePrettily());
+            var m = IntraMessage.actionMessage(GET_AGENT, 10000);
+            handleRequest(addr, m, routingContext);
         }
 
     }
@@ -206,4 +155,19 @@ public class Server extends AbstractVerticle {
     private void sendError(int statusCode, HttpServerResponse response) {
         response.setStatusCode(statusCode).end();
     }
+
+    private void handleRequest(String addr, BusMsgOptions m, RoutingContext routingContext) {
+        HttpServerResponse response = routingContext.response();
+        eventBus.request(addr, m.msg(), m.options())
+                .onComplete(ar -> {
+                    if (ar.succeeded()) {
+                        JsonObject data = (JsonObject) ar.result().body();
+                        routingContext.response().putHeader("content-type", "application/json")
+                                .end(data.encodePrettily());
+                    } else {
+                        sendError(404, response);
+                    }
+                });
+    }
+
 }

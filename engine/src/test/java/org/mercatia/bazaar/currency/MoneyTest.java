@@ -1,10 +1,13 @@
 package org.mercatia.bazaar.currency;
 
-import org.junit.jupiter.api.Test;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import java.math.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.math.BigDecimal;
+
+import org.junit.jupiter.api.Test;
 
 public class MoneyTest {
 
@@ -49,7 +52,8 @@ public class MoneyTest {
             var my = Money.from(Currency.DEFAULT, y1.floatValue());
             assertNotNull(mx);
             assertNotNull(my);
-            // System.err.println(String.format("%3d %02f %02f  mx=%02f my=%02f",x,x1,y1,mx.as(),my.as()));
+            // System.err.println(String.format("%3d %02f %02f mx=%02f
+            // my=%02f",x,x1,y1,mx.as(),my.as()));
 
             assertEquals(0.0, mx.subtract(mx).as());
             assertEquals(1.05, mx.add(my).as());
@@ -70,14 +74,13 @@ public class MoneyTest {
             x1 = x1.add(new BigDecimal(0.01));
             var y1 = yf.subtract(x1);
 
-            
-            var mx = Money.from(Currency.DEFAULT,y1.doubleValue());
-            var my = Money.from(Currency.DEFAULT,y1.doubleValue());
+            var mx = Money.from(Currency.DEFAULT, y1.doubleValue());
+            var my = Money.from(Currency.DEFAULT, y1.doubleValue());
 
             var a = mx.average(my);
             var b = my.average(mx);
-            assertEquals(a,b);
-            assertEquals(0,a.subtract(b).as());
+            assertEquals(a, b);
+            assertEquals(0, a.subtract(b).as());
 
         }
     }
@@ -89,21 +92,52 @@ public class MoneyTest {
 
         var x1 = new BigDecimal(0.0);
         var yf = new BigDecimal(0.5);
-        var my = Money.from(Currency.DEFAULT,yf.doubleValue());
+   
+        var my = Money.from(Currency.DEFAULT, yf.doubleValue());
+        var mz = Money.from(Currency.DEFAULT, 2.0);
         for (var x = 0; x < 105; x++) {
 
             x1 = x1.add(new BigDecimal(0.1));
-           
-           
-            var mx = Money.from(Currency.DEFAULT,x1.doubleValue());
+
+            var mx = Money.from(Currency.DEFAULT, x1.doubleValue());
             var p = mx.multiply(my);
-            System.out.println(mx+" "+p);
+            
+            var q = p.multiply(mz);
 
-            // var a = mx.average(my);
-            // var b = my.average(mx);
-            // assertEquals(a,b);
-            // assertEquals(0,a.subtract(b).as());
+            assertEquals(mx,q);
+            System.out.println(mx + " " + x1.doubleValue());
 
+            var mzz = Money.from(Currency.DEFAULT,x1.doubleValue());
+            System.out.println(mzz);
+            assertEquals(0,mx.as()-x1.doubleValue());
         }
+    }
+
+    @Test
+    public void compare() {
+        var a = Money.from(Currency.DEFAULT, 0);
+        assertTrue(a.zeroOrGreater());
+        assertTrue(a.zeroOrLess());
+
+        var b = Money.from(Currency.DEFAULT, a.addFractional(100).as());
+        assertTrue(b.zeroOrGreater());
+        assertFalse(b.zeroOrLess());
+
+        assertTrue(b.greater(a));
+        assertFalse(b.less(a));
+
+        assertFalse(a.greater(b));
+        assertTrue(a.less(b));
+    }
+
+    @Test
+    public void substract(){
+        var a = Money.from(Currency.DEFAULT, 0);
+        var b = Money.from(Currency.DEFAULT, a.addFractional(100).as());
+
+        assertEquals(a, b.subtract(b));
+        assertEquals(a.subtract(b).add(b),Money.NONE());
+        
+
     }
 }

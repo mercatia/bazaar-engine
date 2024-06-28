@@ -36,5 +36,7 @@ public interface Market extends Jsonable  {
 
     public Agent getAgent(ID id);
 
+    Economy getEconomy();
+
 
 }

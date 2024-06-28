@@ -54,16 +54,13 @@ public class DoranParberryEconomy extends Economy {
 
 	private final static String[] marketNames = new String[] { "WibbleCity" };
 
-	private EventBus eventBus;
-
 	public DoranParberryEconomy(String name){
 		super(name);
 	}
 
-	private String outboundTopic;
-
 	@Override
 	public Economy configure(Vertx vertx) {
+		super.configure(vertx);
 
 		try {
 			logger.info("Reading the configuration");
@@ -77,50 +74,14 @@ public class DoranParberryEconomy extends Economy {
 			throw new RuntimeException(e);
 		}
 
-		this.eventBus = vertx.eventBus();
-
-		logger.info("economy/"+this.getName()+"/incoming");
-		this.eventBus.consumer("economy/"+this.getName()+"/incoming",(event)->{
-			logger.info("Got message" + event);
-			if (event.body().toString().equals("tick")){
-				logger.info("Calling simulate");
-				simulate(1);
-			}
-		});
-		
-		this.outboundTopic = "economy/"+this.getName()+"/outbound";
-		this.eventBus.send(outboundTopic, "Hello from "+this.getName());
-
 		setAgentFactory(new JobFactory());
 
 		for (var n : marketNames) {
-			var market = new MarketImpl(n, this.startingMarketData, this);
-			market.addListener(new EventAdapter(this.eventBus,this.outboundTopic));
+			var market = new MarketImpl(n, this.startingMarketData, this, vertx);
 			addMarket(market);
 		}
-		return this;
-	}
-
-	class EventAdapter implements MarketEventListener{
-
-		private EventBus bus;
-		private String topic;
 		
-		public EventAdapter(EventBus eventBus,String outboundTopic) {
-			this.bus = eventBus;
-			this.topic = outboundTopic;
-		}
-
-		@Override
-		public void marketReport(MarketReportEvent event) {
-			this.bus.send(topic,event);
-		}
-
-		@Override
-		public void agentBankrupt(AgentBankruptEvent event) {
-			this.bus.send(topic,event);
-		}
-
+		return this;
 	}
 
 	/**

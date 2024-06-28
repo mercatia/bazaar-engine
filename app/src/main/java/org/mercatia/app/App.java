@@ -1,10 +1,13 @@
 
 package org.mercatia.app;
 
+import static org.mercatia.bazaar.Transport.Actions.TICK;
+
 import java.util.HashMap;
-import java.util.Timer;
 
 import org.mercatia.bazaar.Economy;
+import org.mercatia.bazaar.Transport;
+import org.mercatia.bazaar.Transport.MSG_TYPE;
 import org.mercatia.danp.DoranParberryEconomy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,13 +34,13 @@ public class App {
             var name = e.getKey();
             var economy = e.getValue();
             economy.configure(vertx);
-            bus.consumer("economy/" + name + "/outgoing", message -> {
-                System.out.println("I have received a message: " + message.body());
-            });
 
             long timerId = vertx.setPeriodic(5000, id -> {
-                logger.info("tick "+"economy/" + name + "/incoming");
-                bus.send("economy/" + name + "/incoming", "tick");
+                String addr = String.format("economy/%s", name);
+                logger.info("tick to "+ addr);
+
+                var m = Transport.IntraMessage.actionMessage(TICK);
+                bus.send(addr, m.msg(), m.options());
             });
         }
 
@@ -48,7 +51,7 @@ public class App {
 
 /**
  * 
- Imports which????
-
+ * Imports which????
+ * 
  * 
  */

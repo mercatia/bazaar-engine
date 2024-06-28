@@ -2,9 +2,9 @@ package org.mercatia.bazaar.utils;
 
 import org.mercatia.Jsonable;
 
-public class Range<T extends Range.RangeType<T>> implements Jsonable{
+public class Range<T extends Range.RangeType<T>> implements Jsonable {
 
-    public static abstract class RangeType<F>  implements Jsonable{
+    public static abstract class RangeType<F> implements Jsonable, Cloneable {
         public abstract F add(F other);
 
         public abstract F subtract(F other);
@@ -24,6 +24,8 @@ public class Range<T extends Range.RangeType<T>> implements Jsonable{
         public abstract boolean less(F other);
 
         public abstract F toNew(double value);
+
+        public abstract F clone();
     }
 
     public static enum LIMIT {
@@ -32,23 +34,46 @@ public class Range<T extends Range.RangeType<T>> implements Jsonable{
 
     private T lower;
     private T upper;
+    private T lowerLimit = null;
+    private T upperLimit = null;
 
     public Range(T lower, T upper) {
         this.lower = lower;
         this.upper = upper;
     }
 
+    public Range(T lower, T upper, T lowerLimit, T upperLimit) {
+        this(lower, upper);
+        this.lowerLimit = lowerLimit;
+        this.upperLimit = upperLimit;
+
+    }
+
+    private void limit() {
+        if (lowerLimit != null && lower.less(lowerLimit)) {
+            this.lower = lowerLimit.clone();
+        }
+
+        if (upperLimit != null && upper.greater(upperLimit)) {
+            this.upper = upperLimit.clone();
+        }
+
+    }
+
     public void drop(T amount, LIMIT l) {
+
         if (l == LIMIT.LOWER) {
-            this.lower = this.lower.subtract(amount);
+            this.lower =  this.lower.subtract(amount);
         } else {
             this.upper = this.upper.subtract(amount);
         }
+
+        limit();
     }
 
     public void drop(T amount) {
-        this.lower = this.lower.subtract(amount);
-        this.upper = this.upper.subtract(amount);
+        drop(amount, LIMIT.LOWER);
+        drop(amount, LIMIT.UPPER);
     }
 
     public void raise(T amount, LIMIT l) {
@@ -57,24 +82,31 @@ public class Range<T extends Range.RangeType<T>> implements Jsonable{
         } else {
             this.upper = this.upper.add(amount);
         }
+
+        limit();
     }
 
     public void raise(T amount) {
-        this.lower = this.lower.add(amount);
-        this.upper = this.upper.add(amount);
+        raise(amount,LIMIT.UPPER);
+        raise(amount,LIMIT.LOWER);
     }
 
     public void increasePc(float f) {
         this.lower = this.lower.multiply(f);
         this.upper = this.upper.multiply(f);
+
+        limit();
     }
 
     public void setLower(T lower) {
         this.lower = lower;
+        limit();
     }
 
     public void setUpper(T upper) {
         this.upper = upper;
+
+        limit();
     }
 
     public T getLower() {
@@ -86,17 +118,15 @@ public class Range<T extends Range.RangeType<T>> implements Jsonable{
     }
 
     public T mean() {
-        return (T) (lower.add(upper).multiply(0.5f));
+        return (T) (lower.add(upper).multiply(0.5));
     }
 
     public T randomInRange() {
-        var a = lower.as();
-        var b = upper.as();
+        var min = lower.as();
+        var max = upper.as();
 
-        double min = a < b ? a : b;
-        double max = a < b ? b : a;
-
-        T value = lower.toNew((float) (Math.random() * (max - min)) + min);
+        double v = (double) (Math.random() * (max - min)) + min;
+        T value = lower.toNew(v);
 
         return value;
     }
@@ -121,11 +151,16 @@ public class Range<T extends Range.RangeType<T>> implements Jsonable{
         return value;
     }
 
-    private record J(double lower,double upper) implements Jsony{};
+    public String toString() {
+        return this.lower + "__" + this.upper;
+    }
+
+    private record J(double lower, double upper) implements Jsony {
+    };
 
     @Override
     public Jsony jsonify() {
-        return new J(lower.as(),upper.as());
+        return new J(lower.as(), upper.as());
     }
 
 }

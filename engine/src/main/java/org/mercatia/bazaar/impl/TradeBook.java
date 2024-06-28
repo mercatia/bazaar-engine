@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.mercatia.Jsonable;
 import org.mercatia.bazaar.Offer;
@@ -14,8 +13,7 @@ public class TradeBook implements Jsonable {
     private Map<String, List<Offer>> bids;
     private Map<String, List<Offer>> asks;
 
-    // private record J(Map<String, List<Jsony>> bids, Map<String, List<Jsony>> asks) implements Jsony {
-    // };
+
     private record J(List<Jsony> bids, List<Jsony> asks) implements Jsony {
     };
 

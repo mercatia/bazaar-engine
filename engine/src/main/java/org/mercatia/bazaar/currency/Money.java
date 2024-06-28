@@ -127,12 +127,15 @@ public class Money extends Range.RangeType<Money> {
 
     @Override
     public double as() {
+
         var fbd = new BigDecimal(this.fractional).movePointLeft(2);
         var ubd = new BigDecimal(this.unit);
 
         var r = ubd.add(fbd);
         r = r.setScale(2, RoundingMode.HALF_DOWN);
-        return r.doubleValue();
+        var v= r.doubleValue();
+
+        return v;
     }
 
     public String toString() {
@@ -148,7 +151,7 @@ public class Money extends Range.RangeType<Money> {
 
     @Override
     public boolean zeroOrLess() {
-        return as() <= 0.0f;
+        return as() <= 0.0;
     }
 
     public static Money NONE() {
@@ -214,6 +217,11 @@ public class Money extends Range.RangeType<Money> {
         if (fractional != other.fractional)
             return false;
         return true;
+    }
+
+    @Override
+    public Money clone() {
+        return new Money(currency, unit, fractional);
     }
 
 

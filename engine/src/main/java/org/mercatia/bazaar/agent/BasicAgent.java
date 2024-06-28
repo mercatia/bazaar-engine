@@ -18,14 +18,13 @@ import org.mercatia.bazaar.utils.Range.LIMIT;
  * @author
  */
 public class BasicAgent extends Agent {
-	public static double SIGNIFICANT = 0.25f; // 25% more or less is "significant"
-	public static Money SIGNIFICANT_MONEY = Money.from(Currency.DEFAULT, 0.25f);
+	public static double SIGNIFICANT = 0.25; // 25% more or less is "significant"
+	public static Money SIGNIFICANT_MONEY = Money.from(Currency.DEFAULT, 0.25);
 
-	public static double SIG_IMBALANCE = 0.33f;
-	public static double LOW_INVENTORY = 0.1f; // 10% of ideal inventory = "LOW"
-	public static double HIGH_INVENTORY = 2.0f; // 200% of ideal inventory = "HIGH"
+	public static double SIG_IMBALANCE = 0.33;
+	public static double LOW_INVENTORY = 0.1; // 10% of ideal inventory = "LOW"
+	public static double HIGH_INVENTORY = 2.0; // 200% of ideal inventory = "HIGH"
 
-	public static Money MIN_PRICE = Money.from(Currency.DEFAULT, 0.01f); // lowest possible price
 
 	public BasicAgent(String id, AgentData data, Map<String, Good> goods) {
 		super(id, data, goods);
@@ -106,7 +105,7 @@ public class BasicAgent extends Agent {
 
 		Range<Money> belief = getPriceBelief(good);
 		Money mean = belief.mean();
-		double wobble = 0.05f;
+		double wobble = 0.05;
 
 		var delta_to_mean = mean.subtract(mean_price);
 
@@ -117,7 +116,7 @@ public class BasicAgent extends Agent {
 				belief.drop(drop);// SHIFT towards mean
 				// belief.x -= delta_to_mean / 2; 
 				// belief.y -= delta_to_mean / 2;
-			} else if (act == "sell" && delta_to_mean.less(SIGNIFICANT_MONEY.multiply(-1.0f))) // undersold
+			} else if (act == "sell" && delta_to_mean.less(SIGNIFICANT_MONEY.multiply(-1.0))) // undersold
 			{
 				var drop = delta_to_mean.multiply(0.5f);
 				belief.drop(drop);
@@ -169,13 +168,13 @@ public class BasicAgent extends Agent {
 
 			belief.drop(mean.multiply(wobble),LIMIT.LOWER);
 			belief.raise(mean.multiply(wobble),LIMIT.UPPER);
-			// belief.x -= wobble * mean; // decrease the belief's certainty
-			// belief.y += wobble * mean;
 		}
 
 		if (belief.getLower().less(MIN_PRICE)) {
 			belief.setLower(MIN_PRICE);
-		} else if (belief.getUpper().less(MIN_PRICE)) {
+		} 
+		
+		if (belief.getUpper().less(MIN_PRICE)) {
 			belief.setUpper(MIN_PRICE);
 		}
 	}
@@ -192,7 +191,7 @@ public class BasicAgent extends Agent {
 	}
 
 	public void produce(String commodity, double amount) {
-		produce(commodity, amount, 1.0f);
+		produce(commodity, amount, 1.0);
 	}
 
 	public void consume(String commodity, double amount) {

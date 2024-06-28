@@ -1,5 +1,8 @@
 package org.mercatia.bazaar.impl;
 
+import static org.mercatia.bazaar.Transport.Actions.LIST_MARKETS;
+import static org.mercatia.bazaar.Transport.Actions.TICK;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -8,28 +11,33 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.mercatia.Jsonable;
 import org.mercatia.bazaar.Economy;
 import org.mercatia.bazaar.Good;
 import org.mercatia.bazaar.Market;
 import org.mercatia.bazaar.MarketData;
 import org.mercatia.bazaar.Offer;
+import org.mercatia.bazaar.Transport;
 import org.mercatia.bazaar.agent.Agent;
 import org.mercatia.bazaar.agent.Agent.ID;
 import org.mercatia.bazaar.agent.AgentData;
 import org.mercatia.bazaar.currency.Currency;
 import org.mercatia.bazaar.currency.Money;
 import org.mercatia.bazaar.utils.History;
-import org.mercatia.bazaar.utils.Quick;
 import org.mercatia.bazaar.utils.ValueRT;
 import org.mercatia.events.EventsOrigin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.EventBus;
+import io.vertx.core.eventbus.MessageConsumer;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+
 /**
 
  */
-public class MarketImpl extends EventsOrigin implements Market{
+public class MarketImpl extends EventsOrigin implements Market {
 	public String name;
 	static Logger logger = LoggerFactory.getLogger(MarketImpl.class);
 	/** Logs information about all economic activity in this market **/
@@ -42,20 +50,25 @@ public class MarketImpl extends EventsOrigin implements Market{
 	private TradeBook _book;
 	private Map<String, AgentData> _mapAgents;
 	private Map<String, Good> _mapGoods;
-	private Economy economy;
+	protected Economy economy;
+	protected EventBus eventBus;
+	protected String addr;
 
 	private record J(String name, List<String> agentids, List<String> goods, Jsony tradebook) implements Jsony {
 	};
 
-	public Jsony jsonify() {		
+	public Jsony jsonify() {
 		return new J(name,
 				_agents.keySet().stream().map(v -> v.toString()).collect(Collectors.toList()),
 				_goodTypes,
 				_book.jsonify());
 	}
 
-	public MarketImpl(String name, MarketData data, Economy econonmy) {
+	public MarketImpl(String name, MarketData data, Economy economy, Vertx vertx) {
 		this.name = name;
+		this.eventBus = vertx.eventBus();
+		this.addr = String.format("economy/%s/market/%s", economy.getName(), this.name);
+		this.economy = economy;
 
 		history = new History();
 		_book = new TradeBook();
@@ -79,17 +92,45 @@ public class MarketImpl extends EventsOrigin implements Market{
 		}
 
 		// Create the default set of agents
-		var af = econonmy.getAgentFactory();
+		var af = economy.getAgentFactory();
 		var agentData = data.agents;
 		for (var agentStart : data.startConditions.getAgents().entrySet()) {
 			int count = agentStart.getValue();
 			String type = agentStart.getKey();
 			for (int i = 0; i < count; i++) {
 				var agent = af.agentData(agentData.get(type)).goods(this._mapGoods).build();
-				agent.init(this);
+				agent.init(this, this.eventBus);
 				this._agents.put(agent.getId(), agent);
 			}
 		}
+
+		MessageConsumer<JsonObject> consumer = eventBus.consumer(this.addr);
+		consumer.handler(message -> {
+			var busMsg = Transport.IntraMessage.busmsg(message);
+			if (busMsg.isAction()) {
+				var reply = new JsonObject();
+				switch (busMsg.getAction()) {
+					case GET_MARKET:
+						reply = JsonObject.mapFrom(this.jsonify());
+						break;
+					case GET_ALL_AGENTS:
+						var arr = new JsonArray();
+						this.getAgents().forEach(v -> {
+							var agent = this.getAgent(v);
+							var json = JsonObject.mapFrom(agent.jsonify());
+							arr.add(json);
+						});
+						reply.put("agents", arr);
+						break;
+					default:
+						logger.error("Unknown action");
+						message.fail(500, "Unknown action ");
+				}
+
+				message.reply(reply);
+			}
+
+		});
 
 	}
 
@@ -104,7 +145,7 @@ public class MarketImpl extends EventsOrigin implements Market{
 	public void replaceAgent(Agent oldAgent, Agent newAgent) {
 		newAgent.id = oldAgent.id;
 		_agents.put(oldAgent.id, newAgent);
-		newAgent.init(this);
+		newAgent.init(this, this.eventBus);
 	}
 
 	/** Run the main simulation */
@@ -123,15 +164,13 @@ public class MarketImpl extends EventsOrigin implements Market{
 			resolveOffers(id);
 		}
 
+		// determine if any new agents are required
 		var toRemove = new ArrayList<ID>();
 		for (Agent agent : _agents.values()) {
 			if (agent.money.zeroOrLess()) {
 				toRemove.add(agent.id);
 			}
 		}
-
-		// logger.info(getMarketReport().toString());
-		// this.fireMarketReportEvent(new MarketReportEvent(this));
 
 	}
 
@@ -291,32 +330,34 @@ public class MarketImpl extends EventsOrigin implements Market{
 		List<Offer> bids = _book.getBids(good);
 		List<Offer> asks = _book.getAsks(good);
 
-		// not sure why shuffle here..
-		Collections.shuffle(bids);
-		Collections.shuffle(asks);
-
+		// // not sure why shuffle here..
+		// Collections.shuffle(bids);
+		// Collections.shuffle(asks);
+		
+		// highest buying price first
 		bids.sort((Offer a, Offer b) -> {
 			if (a.getUnitPrice().less(b.getUnitPrice())) {
-				return -1;
-			} else if (a.getUnitPrice().greater(b.getUnitPrice())) {
 				return 1;
+			} else if (a.getUnitPrice().greater(b.getUnitPrice())) {
+				return -1;
 			} else {
 				return 0;
 			}
 
 		});
 
-		// highest buying price first
 		asks.sort((Offer a, Offer b) -> {
 			if (a.getUnitPrice().less(b.getUnitPrice())) {
-				return 1;
-			} else if (a.getUnitPrice().greater(b.getUnitPrice())) {
 				return -1;
+			} else if (a.getUnitPrice().greater(b.getUnitPrice())) {
+				return 1;
 			} else {
 				return 0;
 			}
 
 		}); // lowest selling price first
+
+
 
 		int successfulTrades = 0; // # of successful trades this round
 		Money moneyTraded = Money.NONE(); // amount of money traded this round
@@ -338,23 +379,23 @@ public class MarketImpl extends EventsOrigin implements Market{
 		// march through and try to clear orders
 		while (bids.size() > 0 && asks.size() > 0) // while both books are non-empty
 		{
-			Offer buyer = bids.get(0);
-			Offer seller = asks.get(0);
+			Offer buyerOffer = bids.get(0);
+			Offer sellerOffer = asks.get(0);
 
-			double quantity_traded = Math.min(seller.units, buyer.units);
-			Money clearing_price = Money.NONE();// Quick.avg(seller.getUnitPrice(), buyer.getUnitPrice());
+			double quantity_traded = Math.min(sellerOffer.units, buyerOffer.units);
+			Money clearing_price = sellerOffer.getUnitPrice().average(buyerOffer.getUnitPrice());
 
 			if (quantity_traded > 0) {
 				// transfer the goods for the agreed price
-				seller.units -= quantity_traded;
-				buyer.units -= quantity_traded;
+				sellerOffer.units -= quantity_traded;
+				buyerOffer.units -= quantity_traded;
 
-				transferGood(good, quantity_traded, seller.agent_id, buyer.agent_id);
-				transferMoney(clearing_price.multiply(quantity_traded), seller.agent_id, buyer.agent_id);
+				transferGood(good, quantity_traded, sellerOffer.agent_id, buyerOffer.agent_id);
+				transferMoney(clearing_price.multiply(quantity_traded), sellerOffer.agent_id, buyerOffer.agent_id);
 
 				// update agent price beliefs based on successful transaction
-				Agent buyer_a = _agents.get(buyer.agent_id);
-				Agent seller_a = _agents.get(seller.agent_id);
+				Agent buyer_a = _agents.get(buyerOffer.agent_id);
+				Agent seller_a = _agents.get(sellerOffer.agent_id);
 				buyer_a.updatePriceModel(this, "buy", good, true, clearing_price);
 				seller_a.updatePriceModel(this, "sell", good, true, clearing_price);
 
@@ -364,12 +405,12 @@ public class MarketImpl extends EventsOrigin implements Market{
 				successfulTrades++;
 			}
 
-			if (seller.units == 0) // seller is out of offered good
-			{
+			// if seller has run out of saleable supplies
+			if (sellerOffer.units < 1) {
 				asks.remove(0);
 				failsafe = 0;
 			}
-			if (buyer.units == 0) // buyer is out of offered good
+			if (buyerOffer.units < 1) // buyer is out of offered good
 			{
 				bids.remove(0); // remove bid
 				failsafe = 0;
@@ -387,7 +428,6 @@ public class MarketImpl extends EventsOrigin implements Market{
 		// update price belief models based on unsuccessful transaction
 		for (Offer b : bids) {
 			Agent buyer_a = _agents.get(b.agent_id);
-			;
 			buyer_a.updatePriceModel(this, "buy", good, false);
 		}
 		for (Offer s : asks) {
@@ -396,7 +436,6 @@ public class MarketImpl extends EventsOrigin implements Market{
 		}
 
 		// update history
-
 		history.asks.add(good, ValueRT.of(numAsks));
 		history.bids.add(good, ValueRT.of(numBids));
 		history.trades.add(good, ValueRT.of(unitsTraded));
@@ -477,6 +516,11 @@ public class MarketImpl extends EventsOrigin implements Market{
 		}
 
 		return mr;
+	}
+
+	@Override
+	public Economy getEconomy() {
+		return this.economy;
 	}
 
 }
