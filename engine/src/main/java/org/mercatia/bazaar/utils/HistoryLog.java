@@ -17,6 +17,10 @@ public class HistoryLog<T extends Range.RangeType<T>> {
 		log = new HashMap<String, ArrayList<T>>();
 	}
 
+	public List<T> get(String n){
+		return log.get(n);
+	}
+
 	/**
 	 * Add a new entry to this log
 	 * 
@@ -53,14 +57,21 @@ public class HistoryLog<T extends Range.RangeType<T>> {
 		if (log.containsKey(name)) {
 			List<T> list = log.get(name);
 			T amt = null;
+			
 			var length = list.size();
+			if (length==0 || range < 1){
+				return null;
+			}
+
+
 			if (length < range) {
 				range = length;
 			}
-			for (T i : list) {
-				amt = i.add(amt);
+			for (var x=length-1; x>=length-range; x--){
+				amt = list.get(x).add(amt);
 			}
-			return amt.multiply(1.0f / range);
+
+			return amt.multiply(1.0/range);
 		}
 		return null;
 	}

@@ -9,11 +9,11 @@ import java.util.stream.Collectors;
 
 import org.mercatia.Jsonable;
 import org.mercatia.bazaar.Good;
-import org.mercatia.bazaar.Market;
 import org.mercatia.bazaar.Offer;
 import org.mercatia.bazaar.Transport;
 import org.mercatia.bazaar.currency.Currency;
 import org.mercatia.bazaar.currency.Money;
+import org.mercatia.bazaar.market.Market;
 import org.mercatia.bazaar.utils.Quick;
 import org.mercatia.bazaar.utils.Range;
 
@@ -193,10 +193,10 @@ public abstract class Agent implements Jsonable {
 
     public abstract void generateOffers(Market market, String good);
 
-    public abstract void updatePriceModel(Market market, String act, String goodid, boolean success,
+    public abstract void updatePriceModel(Market market, Offer.Type act, String goodid, boolean success,
             Money clearing_price);
 
-    public abstract void updatePriceModel(Market market, String act, String goodid, boolean success);
+    public abstract void updatePriceModel(Market market, Offer.Type act, String goodid, boolean success);
 
     public abstract Offer createBid(Market market, String good, double limit);
 

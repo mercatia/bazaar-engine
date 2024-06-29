@@ -3,9 +3,9 @@ package org.mercatia.danp.jobs;
 import java.util.Map;
 
 import org.mercatia.bazaar.Good;
-import org.mercatia.bazaar.Market;
 import org.mercatia.bazaar.agent.Agent;
 import org.mercatia.bazaar.agent.AgentData;
+import org.mercatia.bazaar.market.Market;
 
 /**
 /**
@@ -40,7 +40,7 @@ public class LogicMiner extends GenericJob {
 		} else {
 			//fined $2 for being idle
 			consume("money", 2);
-			if (!has_food && inventoryFull) {
+			if (inventoryFull) {
 				makeRoomFor(market, this, "food", 2);
 			}
 		}

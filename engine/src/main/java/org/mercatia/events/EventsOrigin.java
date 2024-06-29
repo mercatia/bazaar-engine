@@ -10,10 +10,10 @@ public class EventsOrigin {
         listeners.add(listener);
     }
 
-    public void fireMarketReportEvent(MarketReportEvent event){
-        for (var l : listeners) {
-            l.marketReport(event);
-        }
-    }
+    // public void fireMarketReportEvent(MarketReportEvent event){
+    //     for (var l : listeners) {
+    //         l.marketReport(event);
+    //     }
+    // }
 
 }

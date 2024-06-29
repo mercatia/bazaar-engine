@@ -102,7 +102,7 @@ public class Money extends Range.RangeType<Money> {
     @Override
     public Money add(Money x) {
         if (x == null) {
-            return this;
+            x = Money.NONE();
         }
         return addFractional(x.getFractional()).addUnit(x.getUnit());
     }
@@ -132,7 +132,7 @@ public class Money extends Range.RangeType<Money> {
         var ubd = new BigDecimal(this.unit);
 
         var r = ubd.add(fbd);
-        r = r.setScale(2, RoundingMode.HALF_DOWN);
+        r = r.setScale(2, RoundingMode.HALF_UP);
         var v= r.doubleValue();
 
         return v;

@@ -105,11 +105,8 @@ public class MoneyTest {
             var q = p.multiply(mz);
 
             assertEquals(mx,q);
-            System.out.println(mx + " " + x1.doubleValue());
-
-            var mzz = Money.from(Currency.DEFAULT,x1.doubleValue());
-            System.out.println(mzz);
-            assertEquals(0,mx.as()-x1.doubleValue());
+         
+            assertEquals(Money.NONE(),mx.subtract(Money.from(Currency.DEFAULT,x1.doubleValue())));
         }
     }
 

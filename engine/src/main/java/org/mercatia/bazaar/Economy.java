@@ -11,7 +11,9 @@ import org.mercatia.bazaar.Transport.MSG_KEYS;
 import org.mercatia.bazaar.agent.Agent;
 import org.mercatia.bazaar.agent.AgentData;
 import org.mercatia.bazaar.agent.LogicBuilder;
-import org.mercatia.bazaar.impl.MarketImpl;
+import org.mercatia.bazaar.market.BasicMarket;
+import org.mercatia.bazaar.market.Market;
+import org.mercatia.bazaar.market.MarketData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,10 +29,12 @@ public abstract class Economy {
 	private LogicBuilder logicBuilder;
 	protected MarketData startingMarketData;
 	protected AgentData.Factory agentFactory;
+	protected MarketData.Factory marketFactory;
 
 	protected EventBus eventBus;
 	protected String name;
 	protected String addr;
+
 
 	protected BigDecimal tick = new BigDecimal(0);
 
@@ -76,6 +80,12 @@ public abstract class Economy {
 		return this;
 	}
 
+	public void start(Vertx vertx){
+		var markets = this.marketFactory.economy(this).build(vertx);
+		markets.forEach(m->addMarket(m));
+		publishStarted();
+	}
+
 	protected void publishStarted() {
 		var msg = new JsonObject();
 		msg.put("name", this.name);
@@ -99,6 +109,12 @@ public abstract class Economy {
 		return this.agentFactory;
 	}
 
+	
+	public MarketData.Factory getMarketFactory() {
+		return this.marketFactory;
+	}
+
+
 	public Market getMarket(String name) {
 		return markets.get(name);
 	}
@@ -106,6 +122,8 @@ public abstract class Economy {
 	public Set<String> getMarketNames() {
 		return markets.keySet();
 	}
+
+
 
 	public void simulate(int rounds) {
 		this.tick.add(new BigDecimal(rounds));
@@ -121,6 +139,12 @@ public abstract class Economy {
 		this.agentFactory = factory;
 		return this;
 	}
+
+	public Economy setMarketFactory(MarketData.Factory factory) {
+		this.marketFactory = factory;
+		return this;
+	}
+
 
 	public void setLogicBuilder(LogicBuilder builder) {
 		this.logicBuilder = builder;

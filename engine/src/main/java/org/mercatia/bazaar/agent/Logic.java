@@ -1,8 +1,8 @@
 package org.mercatia.bazaar.agent;
 
-import org.mercatia.bazaar.Market;
 import org.mercatia.bazaar.currency.Currency;
 import org.mercatia.bazaar.currency.Money;
+import org.mercatia.bazaar.market.Market;
 
 
 /**

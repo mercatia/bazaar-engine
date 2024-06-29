@@ -2,8 +2,8 @@ package org.mercatia.events;
 
 import java.util.EventObject;
 
-import org.mercatia.bazaar.Market;
 import org.mercatia.bazaar.agent.Agent;
+import org.mercatia.bazaar.market.Market;
 
 public class AgentBankruptEvent extends EventObject {
 

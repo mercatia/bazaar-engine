@@ -1,28 +1,25 @@
 package org.mercatia.danp;
 
 import java.io.InputStream;
+import java.util.Arrays;
 
 import org.mercatia.bazaar.Economy;
-import org.mercatia.bazaar.Market;
-import org.mercatia.bazaar.MarketData;
 import org.mercatia.bazaar.agent.Agent;
 import org.mercatia.bazaar.agent.AgentData;
-import org.mercatia.bazaar.impl.MarketImpl;
+import org.mercatia.bazaar.market.BasicMarket;
+import org.mercatia.bazaar.market.Market;
+import org.mercatia.bazaar.market.MarketData;
 import org.mercatia.danp.jobs.LogicBlacksmith;
 import org.mercatia.danp.jobs.LogicFarmer;
 import org.mercatia.danp.jobs.LogicMiner;
 import org.mercatia.danp.jobs.LogicRefiner;
 import org.mercatia.danp.jobs.LogicWoodcutter;
-import org.mercatia.events.AgentBankruptEvent;
-import org.mercatia.events.MarketEventListener;
-import org.mercatia.events.MarketReportEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.eventbus.EventBus;
 
 /**
  */
@@ -42,9 +39,9 @@ public class DoranParberryEconomy extends Economy {
 				case "refiner":
 					return new LogicRefiner(data, goods);
 				case "woodcutter":
-					return new LogicWoodcutter( data, goods);
+					return new LogicWoodcutter(data, goods);
 				case "blacksmith":
-					return new LogicBlacksmith( data, goods);
+					return new LogicBlacksmith(data, goods);
 				default:
 					throw new RuntimeException(this.logic() + " unknown");
 			}
@@ -54,7 +51,7 @@ public class DoranParberryEconomy extends Economy {
 
 	private final static String[] marketNames = new String[] { "WibbleCity" };
 
-	public DoranParberryEconomy(String name){
+	public DoranParberryEconomy(String name) {
 		super(name);
 	}
 
@@ -76,11 +73,8 @@ public class DoranParberryEconomy extends Economy {
 
 		setAgentFactory(new JobFactory());
 
-		for (var n : marketNames) {
-			var market = new MarketImpl(n, this.startingMarketData, this, vertx);
-			addMarket(market);
-		}
-		
+		setMarketFactory(BasicMarket.factory().name(Arrays.asList(marketNames)).startingData(startingMarketData));
+
 		return this;
 	}
 
@@ -133,19 +127,6 @@ public class DoranParberryEconomy extends Economy {
 	 * _mapAgents.keys()) { amount = getAverageInventory(key, good); if (amount >
 	 * bestAmount) { bestAmount = amount; bestClass = key; } } return bestClass; }
 	 */
-
-	// private Logic getLogic(String str)
-	// {
-	// switch(str)
-	// {
-	// case "blacksmith": return new LogicBlacksmith(null);
-	// case "farmer": return new LogicFarmer(null);
-	// case "miner": return new LogicMiner(null);
-	// case "refiner": return new LogicRefiner(null);
-	// case "woodcutter": return new LogicWoodcutter(null);
-	// }
-	// return null;
-	// }
 
 	public void onBankruptcy(Market arg0, Agent arg1) {
 		// TODO Auto-generated method stub

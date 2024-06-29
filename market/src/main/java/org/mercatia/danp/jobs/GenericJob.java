@@ -3,9 +3,9 @@ import java.util.Arrays;
 import java.util.Map;
 
 import org.mercatia.bazaar.Good;
-import org.mercatia.bazaar.Market;
 import org.mercatia.bazaar.agent.AgentData;
 import org.mercatia.bazaar.agent.BasicAgent;
+import org.mercatia.bazaar.market.Market;
 
 
 /**

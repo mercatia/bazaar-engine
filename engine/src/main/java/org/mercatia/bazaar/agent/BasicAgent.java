@@ -4,11 +4,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.mercatia.bazaar.Good;
-import org.mercatia.bazaar.Market;
 import org.mercatia.bazaar.Offer;
 import org.mercatia.bazaar.currency.Currency;
 import org.mercatia.bazaar.currency.Money;
+import org.mercatia.bazaar.market.BasicMarket;
+import org.mercatia.bazaar.market.Market;
 import org.mercatia.bazaar.utils.ValueRT;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.mercatia.bazaar.utils.Range;
 import org.mercatia.bazaar.utils.Range.LIMIT;
 
@@ -18,6 +21,9 @@ import org.mercatia.bazaar.utils.Range.LIMIT;
  * @author
  */
 public class BasicAgent extends Agent {
+
+	static Logger logger = LoggerFactory.getLogger(BasicAgent.class);
+
 	public static double SIGNIFICANT = 0.25; // 25% more or less is "significant"
 	public static Money SIGNIFICANT_MONEY = Money.from(Currency.DEFAULT, 0.25);
 
@@ -25,16 +31,16 @@ public class BasicAgent extends Agent {
 	public static double LOW_INVENTORY = 0.1; // 10% of ideal inventory = "LOW"
 	public static double HIGH_INVENTORY = 2.0; // 200% of ideal inventory = "HIGH"
 
-
 	public BasicAgent(String id, AgentData data, Map<String, Good> goods) {
 		super(id, data, goods);
 	}
 
 	public Offer createBid(Market bazaar, String good, double limit) {
-		Money bidPrice = super.determinePriceOf(good);
+		Money bidPrice = determinePriceOf(good);
 		double ideal = determinePurchaseQuantity(bazaar, good);
 
 		// can't buy more than limit
+		// double quantityToBuy = ideal > limit ? limit : ideal;
 		double quantityToBuy = ideal > limit ? limit : ideal;
 		if (quantityToBuy > 0) {
 			return new Offer(id, good, quantityToBuy, bidPrice);
@@ -42,14 +48,15 @@ public class BasicAgent extends Agent {
 		return null;
 	}
 
-	public Offer createAsk(Market bazaar, String commodity, double limit) {
-		Money ask_price = determinePriceOf(commodity);
-		double ideal = determineSaleQuantity(bazaar, commodity);
+	public Offer createAsk(Market bazaar, String good, double limit) {
+		Money ask_price = determinePriceOf(good);
+		double ideal = determineSaleQuantity(bazaar, good);
 
 		// can't sell less than limit
-		double quantity_to_sell = ideal < limit ? limit : ideal;
+		// double quantity_to_sell = ideal < limit ? limit : ideal;
+		double quantity_to_sell = ideal > limit ? limit : ideal;
 		if (quantity_to_sell > 0) {
-			return new Offer(id, commodity, quantity_to_sell, ask_price);
+			return new Offer(id, good, quantity_to_sell, ask_price);
 		}
 		return null;
 	}
@@ -58,9 +65,11 @@ public class BasicAgent extends Agent {
 		Offer offer;
 		double surplus = inventory.surplus(commodity);
 		if (surplus >= 1) {
-			offer = createAsk(bazaar, commodity, 1);
+			logger.info("{} surplus {} {} ", this.name, commodity, surplus);
+			offer = createAsk(bazaar, commodity, surplus);
 			if (offer != null) {
 				bazaar.ask(offer);
+				logger.info("{} offer {} ", this.name, offer);
 			}
 		} else {
 			double shortage = inventory.shortage(commodity);
@@ -81,6 +90,7 @@ public class BasicAgent extends Agent {
 					offer = createBid(bazaar, commodity, limit);
 					if (offer != null) {
 						bazaar.bid(offer);
+						logger.info("{} offer {} ", this.name, offer);
 					}
 				}
 			}
@@ -88,41 +98,42 @@ public class BasicAgent extends Agent {
 	}
 
 	@Override
-	public void updatePriceModel(Market market, String act, String goodid, boolean success) {
+	public void updatePriceModel(Market market, Offer.Type act, String goodid, boolean success) {
 		updatePriceModel(market, act, goodid, success, Money.from(Currency.DEFAULT, 0.0f));
 	}
 
-	public void updatePriceModel(Market bazaar, String act, String good, boolean success, Money unitPrice) {
+	public void updatePriceModel(Market bazaar, Offer.Type act, String good, boolean success, Money unitPrice) {
 		List<Money> observed_trades;
-
+		
 		if (success) {
 			// Add this to my list of observed trades
 			observed_trades = observedTradingRange.get(good);
 			observed_trades.add(unitPrice);
 		}
 
-		Money mean_price = bazaar.getAverageHistoricalPrice(good, 1);
+		Money mean_price = bazaar.getAverageHistoricalPrice(good, 5);
 
 		Range<Money> belief = getPriceBelief(good);
 		Money mean = belief.mean();
 		double wobble = 0.05;
 
 		var delta_to_mean = mean.subtract(mean_price);
-
+		// if (name.toLowerCase().equals("blacksmith"))
+		// 	logger.info("{} {} market mean {}  my mean {}",this.name,good,mean_price ,mean);
 		if (success) {
-			if (act == "buy" && delta_to_mean.greater(SIGNIFICANT_MONEY)) // overpaid
+			if (act == Offer.Type.BUY && delta_to_mean.greater(SIGNIFICANT_MONEY)) // overpaid
 			{
-				var drop = delta_to_mean.multiply(0.5f);
+				var drop = delta_to_mean.multiply(0.5);
 				belief.drop(drop);// SHIFT towards mean
 				// belief.x -= delta_to_mean / 2; 
 				// belief.y -= delta_to_mean / 2;
-			} else if (act == "sell" && delta_to_mean.less(SIGNIFICANT_MONEY.multiply(-1.0))) // undersold
+			} else if (act == Offer.Type.SELL && delta_to_mean.less(SIGNIFICANT_MONEY.multiply(-1.0))) // undersold
 			{
-				var drop = delta_to_mean.multiply(0.5f);
+				var drop = delta_to_mean.multiply(0.5);
 				belief.drop(drop);
 			}
-			belief.raise(mean.multiply(wobble),LIMIT.LOWER);
-			belief.drop(mean.multiply(wobble),LIMIT.UPPER);
+			belief.raise(mean.multiply(wobble), LIMIT.LOWER);
+			belief.drop(mean.multiply(wobble), LIMIT.UPPER);
 			// belief.x += wobble * mean; // increase the belief's certainty
 			// belief.y -= wobble * mean;
 		} else {
@@ -135,11 +146,11 @@ public class BasicAgent extends Agent {
 			double stocks = queryInventory(good);
 			double ideal = inventory.ideal(good);
 
-			if (act == "buy" && stocks < LOW_INVENTORY * ideal) {
+			if (act == Offer.Type.BUY && stocks < LOW_INVENTORY * ideal) {
 				// very low on inventory AND can't buy
 				wobble *= 2; // bid more liberally
 				special_case = true;
-			} else if (act == "sell" && stocks > HIGH_INVENTORY * ideal) {
+			} else if (act == Offer.Type.SELL && stocks > HIGH_INVENTORY * ideal) {
 				// very high on inventory AND can't sell
 				wobble *= 2; // ask more liberally
 				special_case = true;
@@ -166,14 +177,14 @@ public class BasicAgent extends Agent {
 				}
 			}
 
-			belief.drop(mean.multiply(wobble),LIMIT.LOWER);
-			belief.raise(mean.multiply(wobble),LIMIT.UPPER);
+			belief.drop(mean.multiply(wobble), LIMIT.LOWER);
+			belief.raise(mean.multiply(wobble), LIMIT.UPPER);
 		}
 
 		if (belief.getLower().less(MIN_PRICE)) {
 			belief.setLower(MIN_PRICE);
-		} 
-		
+		}
+
 		if (belief.getUpper().less(MIN_PRICE)) {
 			belief.setUpper(MIN_PRICE);
 		}

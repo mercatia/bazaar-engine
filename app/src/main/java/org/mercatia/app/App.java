@@ -34,6 +34,7 @@ public class App {
             var name = e.getKey();
             var economy = e.getValue();
             economy.configure(vertx);
+            economy.start(vertx);
 
             long timerId = vertx.setPeriodic(5000, id -> {
                 String addr = String.format("economy/%s", name);

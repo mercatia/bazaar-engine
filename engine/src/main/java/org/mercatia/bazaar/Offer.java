@@ -17,6 +17,7 @@ public class Offer implements Jsonable {
 	public double units; // how many units
 	private Money unit_price; // price per unit
 	public ID agent_id; // who offered this
+	private Type type;
 
 	public Money getUnitPrice() {
 		return this.unit_price;
@@ -29,20 +30,26 @@ public class Offer implements Jsonable {
 		this.unit_price = unit_price;
 
 		if (unit_price.zeroOrLess() || units < 1.0) {
-			throw new RuntimeException("Offering to sell " + units + " of " + commodity + " for " + unit_price);
+			throw new RuntimeException(
+					"Offering to " + type.name() + " " + units + " of " + commodity + " for " + unit_price);
 		}
 
 	}
 
-	public String toString() {
-		return "(" + agent_id + ") " + good + " " + units + " of @ " + unit_price;
+	public Offer setType(Type type) {
+		this.type = type;
+		return this;
 	}
 
-	private record J(String good, double units, double unit_price, String offeringAgent) implements Jsony {
+	public String toString() {
+		return "(" + agent_id + ") " + type.name() + " " + good + " " + units + " of @ " + unit_price;
+	}
+
+	private record J(String good, String type, double units, double unit_price, String offeringAgent) implements Jsony {
 	};
 
 	@Override
 	public Jsony jsonify() {
-		return new J(good, units, unit_price.as(), agent_id.toString());
+		return new J(good, type.name(), units, unit_price.as(), agent_id.toString());
 	}
 }

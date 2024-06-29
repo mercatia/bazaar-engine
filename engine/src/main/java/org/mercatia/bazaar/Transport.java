@@ -2,7 +2,6 @@ package org.mercatia.bazaar;
 
 import org.mercatia.events.AgentBankruptEvent;
 import org.mercatia.events.MarketEventListener;
-import org.mercatia.events.MarketReportEvent;
 import org.mercatia.transport.Confirmation;
 import org.mercatia.transport.EconomyReport;
 import org.mercatia.transport.TransportGrpc;
@@ -147,10 +146,6 @@ public class Transport implements AutoCloseable, MarketEventListener {
         // channel.shutdownNow().awaitTermination(5, TimeUnit.SECONDS);
     }
 
-    @Override
-    public void marketReport(MarketReportEvent event) {
-        greet(event.getReport().toString());
-    }
 
     @Override
     public void agentBankrupt(AgentBankruptEvent event) {

@@ -16,7 +16,7 @@ content-type: application/json
 
 ###
 
-GET http://127.0.0.1:3000/economy/EcoOne/market/WibbleCity/agent/8dd7dce5-7089-4661-a068-cef54924ec99/
+GET http://127.0.0.1:3000/economy/EcoOne/market/WibbleCity/agent/362f3d83-7117-4291-b905-b5fdb085e772/
 content-type: application/json
 
 
