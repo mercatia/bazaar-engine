@@ -146,12 +146,26 @@ public class Inventory implements Jsonable {
 		if (!stuff.containsKey(goodid)) {
 			return 0;
 		}
+
 		double amt = query(goodid);
 		double idealAmt = ideal.get(goodid);
 		if (amt < idealAmt) {
 			return Math.floor(idealAmt - amt);
 		}
 		return 0;
+	}
+
+	public String getMostHeld(){
+		String mostHeld = "";
+		double held = 0.0;
+		for (var e : stuff.entrySet()){
+			if (e.getValue()>held){
+				held = e.getValue();
+				mostHeld = e.getKey();
+			}
+		}
+
+		return mostHeld;
 	}
 
 	public static Inventory builderFromData(InventoryData data, Map<String, Good> goods) {

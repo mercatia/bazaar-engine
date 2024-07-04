@@ -5,11 +5,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.locks.ReentrantLock;
 
 import org.mercatia.Jsonable;
 import org.mercatia.bazaar.Economy;
 import org.mercatia.bazaar.Good;
 import org.mercatia.bazaar.Offer;
+import org.mercatia.bazaar.Offer.Resoultion;
 import org.mercatia.bazaar.Offer.Type;
 import org.mercatia.bazaar.Transport;
 import org.mercatia.bazaar.agent.Agent;
@@ -42,6 +44,10 @@ public abstract class Market implements Jsonable {
     protected List<String> _goodTypes; // list of string ids for all the legal commodities
     protected Map<ID, Agent> _agents;
     protected TradeBook _book;
+
+    
+    protected ReentrantLock mutex = new ReentrantLock();
+    protected Map<String,List<Offer>> lastResolvedTradeBook;
     protected Map<String, AgentData> _mapAgents;
     protected Map<String, Good> _mapGoods;
     protected Economy economy;
@@ -130,8 +136,16 @@ public abstract class Market implements Jsonable {
             }
         }
 
-        for (String id : _goodTypes) {
-            resolveOffers(id);
+        try {
+            mutex.lock();
+            this.lastResolvedTradeBook = new HashMap<>();
+
+            for (String id : _goodTypes) {
+                resolveOffers(id);
+            }
+    
+        } finally{
+            mutex.unlock();
         }
 
         // determine if any new agents are required
@@ -141,6 +155,8 @@ public abstract class Market implements Jsonable {
                 toRemove.add(agent.id);
             }
         }
+
+        System.out.println(JsonObject.mapFrom(this.history.jsonify()));
 
     }
 
@@ -299,6 +315,8 @@ public abstract class Market implements Jsonable {
 
     private void resolveOffers(String good) {
 
+        var resolvedTradeBook = new ArrayList<Offer>();
+
         List<Offer> bids = _book.getBids(good);
         List<Offer> asks = _book.getAsks(good);
 
@@ -350,11 +368,11 @@ public abstract class Market implements Jsonable {
 
             double quantity_traded = Math.min(sellerOffer.units, buyerOffer.units);
             Money clearing_price = sellerOffer.getUnitPrice().average(buyerOffer.getUnitPrice());
-
+            logger.info("Sell $ {} Buy ${} Clearing ${}",sellerOffer.getUnitPrice(),buyerOffer.getUnitPrice(),clearing_price);
             if (quantity_traded > 0) {
-                // transfer the goods for the agreed price
-                sellerOffer.units -= quantity_traded;
-                buyerOffer.units -= quantity_traded;
+                // // transfer the goods for the agreed price
+                // sellerOffer.units -= quantity_traded;
+                // buyerOffer.units -= quantity_traded;
 
                 transferGood(good, quantity_traded, sellerOffer.agent_id, buyerOffer.agent_id);
                 transferMoney(clearing_price.multiply(quantity_traded), sellerOffer.agent_id, buyerOffer.agent_id);
@@ -365,29 +383,17 @@ public abstract class Market implements Jsonable {
                 buyer_a.updatePriceModel(this, Offer.Type.BUY, good, true, clearing_price);
                 seller_a.updatePriceModel(this, Offer.Type.SELL, good, true, clearing_price);
 
+                sellerOffer.addResoultion(new Offer.Resoultion(quantity_traded, clearing_price));
+                buyerOffer.addResoultion(new Offer.Resoultion(quantity_traded, clearing_price));
                 // log the stats
                 moneyTraded = moneyTraded.add(clearing_price.multiply(quantity_traded));
                 unitsTraded += quantity_traded;
                 successfulTrades++;
-            }
 
-            // if seller has run out of saleable supplies
-            if (sellerOffer.units < 1) {
-                asks.remove(0);
-                failsafe = 0;
-            }
-            if (buyerOffer.units < 1) // buyer is out of offered good
-            {
-                bids.remove(0); // remove bid
-                failsafe = 0;
-            }
-
-            failsafe++;
-
-            if (failsafe > 1000) // not good
-            {
-                throw new RuntimeException("BOINK!");
-            }
+                resolvedTradeBook.add(asks.remove(0));
+                resolvedTradeBook.add(bids.remove(0)); // remove bid
+            }    
+            
         }
 
         // reject all remaining offers,
@@ -395,10 +401,12 @@ public abstract class Market implements Jsonable {
         for (Offer b : bids) {
             Agent buyer_a = _agents.get(b.agent_id);
             buyer_a.updatePriceModel(this,Offer.Type.BUY, good, false);
+            resolvedTradeBook.add(b);
         }
         for (Offer s : asks) {
             Agent seller_a = _agents.get(s.agent_id);
             seller_a.updatePriceModel(this,Offer.Type.SELL, good, false);
+            resolvedTradeBook.add(s);
         }
 
         asks.clear();
@@ -450,6 +458,11 @@ public abstract class Market implements Jsonable {
 
         // sort by id so everything works again
         // _agents.sort(Quick.sortAgentId);
+        
+        
+       this.lastResolvedTradeBook.put(good,resolvedTradeBook);
+        
+        
 
     }
 

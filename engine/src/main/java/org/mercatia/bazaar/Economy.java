@@ -64,6 +64,7 @@ public abstract class Economy {
 						break;
 					case TICK:
 						simulate(1);
+
 						reply.put("tick", this.tick.longValue());
 						break;
 

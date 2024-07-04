@@ -42,7 +42,7 @@ public class BasicAgent extends Agent {
 		// can't buy more than limit
 		// double quantityToBuy = ideal > limit ? limit : ideal;
 		double quantityToBuy = ideal > limit ? limit : ideal;
-		if (quantityToBuy > 0) {
+		if (quantityToBuy >= 1.0) {
 			return new Offer(id, good, quantityToBuy, bidPrice);
 		}
 		return null;
@@ -55,7 +55,7 @@ public class BasicAgent extends Agent {
 		// can't sell less than limit
 		// double quantity_to_sell = ideal < limit ? limit : ideal;
 		double quantity_to_sell = ideal > limit ? limit : ideal;
-		if (quantity_to_sell > 0) {
+		if (quantity_to_sell >= 1.0) {
 			return new Offer(id, good, quantity_to_sell, ask_price);
 		}
 		return null;
@@ -75,8 +75,9 @@ public class BasicAgent extends Agent {
 			double shortage = inventory.shortage(commodity);
 			double space = inventory.getEmptySpace();
 			double unit_size = inventory.getCapacityFor(commodity);
-
+			
 			if (shortage > 0 && space >= unit_size) {
+				logger.info("{} shortage {} of {} inventorysize={}, unitsize={}" ,this.name,shortage,commodity, space,unit_size);
 				double limit = 0;
 				if ((shortage * unit_size) <= space) // enough space for ideal order
 				{
@@ -93,6 +94,9 @@ public class BasicAgent extends Agent {
 						logger.info("{} offer {} ", this.name, offer);
 					}
 				}
+			} else if (shortage>0){
+				inventoryFull = true;
+				logger.info("{} !!!!! shortage {} of {} inventorysize={}, unitsize={}" ,this.name,shortage,commodity, space,unit_size);
 			}
 		}
 	}
@@ -206,7 +210,7 @@ public class BasicAgent extends Agent {
 	}
 
 	public void consume(String commodity, double amount) {
-		consume(commodity, amount, 1.0f);
+		consume(commodity, amount, 1.0);
 	}
 
 	public void consume(String commodity, double amount, double chance) {

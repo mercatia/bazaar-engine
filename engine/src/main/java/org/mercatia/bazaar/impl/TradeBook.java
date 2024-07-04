@@ -8,7 +8,7 @@ import java.util.Map;
 import org.mercatia.Jsonable;
 import org.mercatia.bazaar.Offer;
 
-public class TradeBook implements Jsonable {
+public class TradeBook implements Jsonable, Cloneable {
 
     private Map<String, List<Offer>> bids;
     private Map<String, List<Offer>> asks;

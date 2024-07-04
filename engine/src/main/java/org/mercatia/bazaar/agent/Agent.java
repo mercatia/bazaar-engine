@@ -90,7 +90,7 @@ public abstract class Agent implements Jsonable {
     public boolean inventoryFull;
     public boolean destroyed;
 
-    Inventory inventory;
+    protected Inventory inventory;
     Map<String, Range<Money>> priceBeliefs;
     Map<String, List<Money>> observedTradingRange;
     double profit = 0.0f;

@@ -4,21 +4,33 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
+
+import org.mercatia.Jsonable;
 
 /**
 
  */
-public class HistoryLog<T extends Range.RangeType<T>> {
+public class HistoryLog<T extends Range.RangeType<T>> implements Jsonable {
 	EconNoun type;
 	Map<String, ArrayList<T>> log;
+
+	protected ReentrantLock mutex = new ReentrantLock();
 
 	public HistoryLog(EconNoun type) {
 		this.type = type;
 		log = new HashMap<String, ArrayList<T>>();
 	}
 
-	public List<T> get(String n){
-		return log.get(n);
+	public List<T> get(String n) {
+		try {
+			mutex.lock();
+			return log.get(n);
+		} finally {
+			mutex.unlock();
+		}
+
 	}
 
 	/**
@@ -28,9 +40,14 @@ public class HistoryLog<T extends Range.RangeType<T>> {
 	 * @param amount
 	 */
 	public void add(String name, T amount) {
-		if (log.containsKey(name)) {
-			var list = log.get(name);
-			list.add(amount);
+		try {
+			mutex.lock();
+			if (log.containsKey(name)) {
+				var list = log.get(name);
+				list.add(amount);
+			}
+		} finally {
+			mutex.unlock();
 		}
 	}
 
@@ -40,9 +57,15 @@ public class HistoryLog<T extends Range.RangeType<T>> {
 	 * @param name
 	 */
 	public void register(String name) {
-		if (!log.containsKey(name)) {
-			log.put(name, new ArrayList<T>());
+		try {
+			mutex.lock();
+			if (!log.containsKey(name)) {
+				log.put(name, new ArrayList<T>());
+			}
+		} finally {
+			mutex.unlock();
 		}
+
 	}
 
 	/**
@@ -54,25 +77,56 @@ public class HistoryLog<T extends Range.RangeType<T>> {
 	 * @return
 	 */
 	public T average(String name, int range) {
-		if (log.containsKey(name)) {
-			List<T> list = log.get(name);
-			T amt = null;
-			
-			var length = list.size();
-			if (length==0 || range < 1){
-				return null;
-			}
+		try {
+			mutex.lock();
+			if (log.containsKey(name)) {
+				List<T> list = log.get(name);
+				T amt = null;
 
+				var length = list.size();
+				if (length == 0 || range < 1) {
+					return null;
+				}
 
-			if (length < range) {
-				range = length;
-			}
-			for (var x=length-1; x>=length-range; x--){
-				amt = list.get(x).add(amt);
-			}
+				if (length < range) {
+					range = length;
+				}
+				for (var x = length - 1; x >= length - range; x--) {
+					amt = list.get(x).add(amt);
+				}
 
-			return amt.multiply(1.0/range);
+				return amt.multiply(1.0 / range);
+			}
+		} finally {
+			mutex.unlock();
 		}
+
 		return null;
+	}
+
+	private static record J(Map<String, List<Jsony>> log) implements Jsony {
+	};
+
+	@Override
+	public Jsony jsonify() {
+		try {
+			mutex.lock();
+
+			var m = new HashMap<String, List<Jsony>>();
+			for (var logEntry : this.log.entrySet()) {
+				String key = logEntry.getKey();
+				List<T> list = logEntry.getValue();
+				var l = list.stream().map(x -> x.jsonify()).collect(Collectors.toList());
+				m.put(key, l);
+
+				//  var newList = list.steam().map(e->e.)
+			}
+
+			return new J(m);
+		} finally {
+			mutex.unlock();
+		}
+	
+
 	}
 }

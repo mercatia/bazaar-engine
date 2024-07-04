@@ -25,7 +25,7 @@ public class App {
 
         // var tx = Transport.configure();
 
-        var econ = new DoranParberryEconomy("EcoOne").configure(vertx);
+        var econ = new DoranParberryEconomy("EcoOne");
         world.put("EcoOne", econ);
 
         var bus = vertx.eventBus();
