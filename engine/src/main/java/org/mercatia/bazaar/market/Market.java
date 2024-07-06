@@ -1,5 +1,7 @@
 package org.mercatia.bazaar.market;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -11,7 +13,6 @@ import org.mercatia.Jsonable;
 import org.mercatia.bazaar.Economy;
 import org.mercatia.bazaar.Good;
 import org.mercatia.bazaar.Offer;
-import org.mercatia.bazaar.Offer.Resoultion;
 import org.mercatia.bazaar.Offer.Type;
 import org.mercatia.bazaar.Transport;
 import org.mercatia.bazaar.agent.Agent;
@@ -53,12 +54,14 @@ public abstract class Market implements Jsonable {
     protected Economy economy;
     protected EventBus eventBus;
     protected String addr;
+    protected MarketData startingData;
 
     public Market(String name, MarketData data, Economy economy, Vertx vertx) {
         this.name = name;
         this.eventBus = vertx.eventBus();
         this.addr = String.format("economy/%s/market/%s", economy.getName(), this.name);
         this.economy = economy;
+        this.startingData = data;
 
         history = new History();
         _book = new TradeBook();
@@ -84,6 +87,7 @@ public abstract class Market implements Jsonable {
         // Create the default set of agents
         var af = economy.getAgentFactory();
         var agentData = data.agents;
+
         for (var agentStart : data.startConditions.getAgents().entrySet()) {
             int count = agentStart.getValue();
             String type = agentStart.getKey();
@@ -124,10 +128,19 @@ public abstract class Market implements Jsonable {
 
     }
 
+    public void addAgent(String type){
+        var agentData = startingData.agents;
+        var af = economy.getAgentFactory();
+        var agent = af.agentData(agentData.get(type)).goods(this._mapGoods).build();
+        agent.init(this, this.eventBus);
+        this._agents.put(agent.getId(), agent);
+    }
+
     /** Run the main simulation */
     public void simulate(int rounds) {
         // for each agent
         for (Agent agent : _agents.values()) {
+            logger.info(agent.toString());
             agent.moneyLastRound = agent.money;
             agent.simulate(this);
 
@@ -151,13 +164,32 @@ public abstract class Market implements Jsonable {
         // determine if any new agents are required
         var toRemove = new ArrayList<ID>();
         for (Agent agent : _agents.values()) {
+            logger.info(agent.toString());
             if (agent.money.zeroOrLess()) {
                 toRemove.add(agent.id);
             }
         }
 
-        System.out.println(JsonObject.mapFrom(this.history.jsonify()));
+        writeLogFile();
 
+        logger.info("Agents: {} before removing BANKRUPT {} ",_agents.size(),toRemove);
+        for (var id : toRemove){
+           
+            this.economy.onBankruptcy(this, _agents.remove(id));
+        }
+
+        if (_agents.size()<=2){
+            System.exit(-1);
+        }
+    }
+
+    private void writeLogFile(){
+
+        try (FileWriter writer = new FileWriter("log.json")){
+            writer.write(JsonObject.mapFrom(this.history.jsonify()).toString());
+        } catch (IOException e){
+            logger.error("Can't write file",e);
+        }
     }
 
     public Agent getAgent(ID id) {
@@ -368,7 +400,7 @@ public abstract class Market implements Jsonable {
 
             double quantity_traded = Math.min(sellerOffer.units, buyerOffer.units);
             Money clearing_price = sellerOffer.getUnitPrice().average(buyerOffer.getUnitPrice());
-            logger.info("Sell $ {} Buy ${} Clearing ${}",sellerOffer.getUnitPrice(),buyerOffer.getUnitPrice(),clearing_price);
+            // logger.info("Sell $ {} Buy ${} Clearing ${}",sellerOffer.getUnitPrice(),buyerOffer.getUnitPrice(),clearing_price);
             if (quantity_traded > 0) {
                 // // transfer the goods for the agreed price
                 // sellerOffer.units -= quantity_traded;
@@ -399,12 +431,16 @@ public abstract class Market implements Jsonable {
         // reject all remaining offers,
         // update price belief models based on unsuccessful transaction
         for (Offer b : bids) {
+            
             Agent buyer_a = _agents.get(b.agent_id);
+            logger.info("Rejected Bids {} {}",buyer_a.getName(),b);
             buyer_a.updatePriceModel(this,Offer.Type.BUY, good, false);
             resolvedTradeBook.add(b);
         }
         for (Offer s : asks) {
+            
             Agent seller_a = _agents.get(s.agent_id);
+            logger.info("Rejected Asks {} {}",seller_a.getName(),s);
             seller_a.updatePriceModel(this,Offer.Type.SELL, good, false);
             resolvedTradeBook.add(s);
         }
@@ -429,41 +465,11 @@ public abstract class Market implements Jsonable {
         }
 
         // logger.info(history.prices.get(good).toString());
-        // logger.info("{} traded units {}, total money {}, avg price {}",good,unitsTraded, moneyTraded,avgPrice);
+        logger.info("{} traded units {}, total money {}, avg price {}",good,unitsTraded, moneyTraded,avgPrice);
 
-        String curr_class = "";
-        String last_class = "";
-        List<Float> list = null;
-        double avg_profit = 0;
-
-        // for (Agent a: _agents.values())
-        // {
-        // //get current agent
-        // curr_class = a.className; //check its class
-        // if (curr_class != last_class) //new class?
-        // {
-        // if (list != null) //do we have a list built up?
-        // {
-        // //log last class' profit
-        // history.profit.add(last_class, Quick.listAvgf(list));
-        // }
-        // list = []; //make a new list
-        // last_class = curr_class;
-        // }
-        // list.push(a.profit); //push profit onto list
-        // }
-
-        // add the last class too
-        // history.profit.add(last_class, Quick.listAvgf(list));
-
-        // sort by id so everything works again
-        // _agents.sort(Quick.sortAgentId);
-        
-        
+       
        this.lastResolvedTradeBook.put(good,resolvedTradeBook);
         
-        
-
     }
 
     protected void transferGood(String good, double units, ID seller_id, ID buyer_id) {
@@ -476,8 +482,10 @@ public abstract class Market implements Jsonable {
     protected void transferMoney(Money amount, ID seller_id, ID buyer_id) {
         Agent seller = _agents.get(seller_id);
         Agent buyer = _agents.get(buyer_id);
+        logger.info(" {} from {} to {}",amount, buyer.name, seller.name);
         seller.money = seller.money.add(amount);
         buyer.money = buyer.money.subtract(amount);
+        
     }
 
     public String getName() {
@@ -496,11 +504,4 @@ public abstract class Market implements Jsonable {
         return _mapAgents.get(className);
     }
 
-    public List<String> getAgentClassNames() {
-        List<String> agentData = new ArrayList();
-        for (String key : _mapAgents.keySet()) {
-            agentData.add(key);
-        }
-        return agentData;
-    }
 }

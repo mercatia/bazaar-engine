@@ -118,10 +118,10 @@ public abstract class Agent implements Jsonable {
 
     public String toString() {
         StringBuilder sb = new StringBuilder("Agent").append("[");
-        sb.append(id).append("/").append(this.name).append(" money:").append(money);
-        sb.append(" profit:").append(profit);
-        sb.append(" inventory:").append(inventory);
-        sb.append("]");
+        sb.append(id).append("] ").append(String.format("%-15s",this.name)).append(" money: ").append(money);
+        sb.append(" previousMoney: ").append(this.moneyLastRound);
+        sb.append(" inventory: ").append(inventory);
+        
         return sb.toString();
     }
 

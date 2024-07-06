@@ -30,7 +30,7 @@ public class LogicWoodcutter extends GenericJob {
 				//produce 2 wood, consume 1 food, break tools with 10% chance
 				produce("wood", 2,1);
 				consume("food", 1,1);
-				consume("tools", 1, 0.1f);
+				consume("tools", 1, 0.1);
 			} else {
 				//produce 1 wood, consume 1 food
 				produce("wood", 1,1);

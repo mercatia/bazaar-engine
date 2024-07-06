@@ -127,12 +127,11 @@ public abstract class Economy {
 
 
 	public void simulate(int rounds) {
-		this.tick.add(new BigDecimal(rounds));
-		logger.info("Simulation of rounds=" + rounds);
+		this.tick = this.tick.add(new BigDecimal(rounds));
+		logger.info("TICK {}",this.tick);
 		for (Market m : markets.values()) {
 			m.simulate(rounds);
 		}
-		logger.info("Simulation complete");
 
 	}
 

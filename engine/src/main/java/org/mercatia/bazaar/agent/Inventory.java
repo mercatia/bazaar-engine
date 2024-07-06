@@ -176,7 +176,7 @@ public class Inventory implements Jsonable {
 	public String toString() {
 		var sb = new StringBuilder();
 		for (var i : this.stuff.entrySet()) {
-			sb.append(i.getKey()).append("==").append(i.getValue()).append("/");
+			sb.append(String.format("%-6s",i.getKey())).append("==").append(i.getValue()).append("|");
 		}
 
 		return sb.toString();

@@ -128,9 +128,25 @@ public class DoranParberryEconomy extends Economy {
 	 * bestAmount) { bestAmount = amount; bestClass = key; } } return bestClass; }
 	 */
 
-	public void onBankruptcy(Market arg0, Agent arg1) {
-		// TODO Auto-generated method stub
+	public void onBankruptcy(Market market, Agent oldAgent) {
+	
+		var bestClass= market.getMostProfitableAgentClass(10);
 
+		//Special case to deal with very high demand-to-supply ratios
+		//This will make them favor entering an underserved market over
+		//Just picking the most profitable class
+		var bestGood = market.getHottestGood(1.5,10);
+
+		if (bestGood != "")
+		{
+			var bestGoodClass = getAgentClassThatMakesMost(bestGood);
+			if (bestGoodClass != "")
+			{
+				bestClass = bestGoodClass;
+			}
+		}
+		logger.info("Creating new "+bestClass);
+		market.addAgent(bestClass);
 	}
 
 }

@@ -65,11 +65,11 @@ public class BasicAgent extends Agent {
 		Offer offer;
 		double surplus = inventory.surplus(commodity);
 		if (surplus >= 1) {
-			logger.info("{} surplus {} {} ", this.name, commodity, surplus);
+			// logger.info("{} surplus {} {} ", this.name, commodity, surplus);
 			offer = createAsk(bazaar, commodity, surplus);
 			if (offer != null) {
 				bazaar.ask(offer);
-				logger.info("{} offer {} ", this.name, offer);
+				logger.debug("{} offer {} ", this.name, offer);
 			}
 		} else {
 			double shortage = inventory.shortage(commodity);
@@ -77,7 +77,7 @@ public class BasicAgent extends Agent {
 			double unit_size = inventory.getCapacityFor(commodity);
 			
 			if (shortage > 0 && space >= unit_size) {
-				logger.info("{} shortage {} of {} inventorysize={}, unitsize={}" ,this.name,shortage,commodity, space,unit_size);
+				// logger.info("{} shortage {} of {} inventorysize={}, unitsize={}" ,this.name,shortage,commodity, space,unit_size);
 				double limit = 0;
 				if ((shortage * unit_size) <= space) // enough space for ideal order
 				{
@@ -91,12 +91,12 @@ public class BasicAgent extends Agent {
 					offer = createBid(bazaar, commodity, limit);
 					if (offer != null) {
 						bazaar.bid(offer);
-						logger.info("{} offer {} ", this.name, offer);
+						logger.debug("{} offer {} ", this.name, offer);
 					}
 				}
 			} else if (shortage>0){
 				inventoryFull = true;
-				logger.info("{} !!!!! shortage {} of {} inventorysize={}, unitsize={}" ,this.name,shortage,commodity, space,unit_size);
+				// logger.info("{} !!!!! shortage {} of {} inventorysize={}, unitsize={}" ,this.name,shortage,commodity, space,unit_size);
 			}
 		}
 	}

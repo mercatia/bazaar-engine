@@ -33,7 +33,7 @@ public class LogicRefiner extends GenericJob {
 				produce("metal", ore);
 				consume("ore", ore);
 				consume("food", 1);
-				consume("tools", 1, 0.1f);
+				consume("tools", 1, 0.1);
 			} else {
 				//convert up to 2 ore into metal, consume 1 food
 				var max = queryInventory("ore");

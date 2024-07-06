@@ -141,7 +141,7 @@ public class Money extends Range.RangeType<Money> {
     public String toString() {
         var sign = (unit < 0 || fractional < 0) ? "-" : "";
 
-        return String.format("%s%d.%02d", sign, Math.abs(unit), Math.abs(fractional));
+        return String.format("%s%4d.%02d", sign, Math.abs(unit), Math.abs(fractional));
     }
 
     @Override
