@@ -129,4 +129,8 @@ public class HistoryLog<T extends Range.RangeType<T>> implements Jsonable {
 	
 
 	}
+
+	public String toString(){
+		return this.log.toString();
+	}
 }

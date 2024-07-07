@@ -78,10 +78,15 @@ public abstract class Agent implements Jsonable {
 
     }
 
+    public static interface Logic {
+        public String label();
+    };
+
     protected EventBus eventBus;
     protected String addr;
     public ID id; // unique integer identifier
-    public String name; // string identifier, "famer", "woodcutter", etc.
+    // public String name; // string identifier, "famer", "woodcutter", etc.
+    protected Logic logic;
 
     public Money money;
     public Money moneyLastRound;
@@ -93,7 +98,7 @@ public abstract class Agent implements Jsonable {
     protected Inventory inventory;
     Map<String, Range<Money>> priceBeliefs;
     Map<String, List<Money>> observedTradingRange;
-    double profit = 0.0f;
+    
     int lookback = 15;
 
     public static Money MIN_PRICE = Money.from(Currency.DEFAULT, 0.01); // lowest possible price
@@ -113,12 +118,12 @@ public abstract class Agent implements Jsonable {
                 .collect(Collectors.toMap(e -> e.getKey(),
                         v -> v.getValue().stream().map(x -> x.jsonify()).collect(Collectors.toList())));
 
-        return new AgentJSON(id.toString(), name, money.as(), inv, pv, otr);
+        return new AgentJSON(id.toString(), logic.label(), money.as(), inv, pv, otr);
     }
 
     public String toString() {
         StringBuilder sb = new StringBuilder("Agent").append("[");
-        sb.append(id).append("] ").append(String.format("%-15s",this.name)).append(" money: ").append(money);
+        sb.append(id).append("] ").append(String.format("%-15s",this.logic.label())).append(" money: ").append(money);
         sb.append(" previousMoney: ").append(this.moneyLastRound);
         sb.append(" inventory: ").append(inventory);
         
@@ -129,9 +134,9 @@ public abstract class Agent implements Jsonable {
         this.id = new ID();
     }
 
-    public Agent(String name, AgentData data, Map<String, Good> goods) {
+    public Agent(Agent.Logic logic, AgentData data, Map<String, Good> goods) {
         this();
-        this.name = name;
+        this.logic=logic;
         money = data.getMoney();
 
         inventory = Inventory.builderFromData(data.inventory, goods);
@@ -185,8 +190,8 @@ public abstract class Agent implements Jsonable {
         return this.id;
     }
 
-    public String getName() {
-        return this.name;
+    public Agent.Logic getLogic(){
+        return this.logic;
     }
 
     public abstract void simulate(Market market);
@@ -214,7 +219,7 @@ public abstract class Agent implements Jsonable {
         return inventory.getEmptySpace() == 0;
     }
 
-    protected Money getProfit() {
+    public Money getProfit() {
         return money.subtract(moneyLastRound);
     }
 

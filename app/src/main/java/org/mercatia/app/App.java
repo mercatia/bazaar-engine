@@ -36,7 +36,7 @@ public class App {
             economy.configure(vertx);
             economy.start(vertx);
 
-            long timerId = vertx.setPeriodic(800, id -> {
+            long timerId = vertx.setPeriodic(5000, id -> {
                 String addr = String.format("economy/%s", name);
                 logger.info("tick to "+ addr);
 

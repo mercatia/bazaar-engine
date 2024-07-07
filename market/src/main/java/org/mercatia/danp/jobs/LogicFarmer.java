@@ -8,16 +8,21 @@ import org.mercatia.bazaar.market.BasicMarket;
 import org.mercatia.bazaar.market.Market;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+
+import static org.mercatia.danp.DoranParberryEconomy.DPEJobs.FARMER;
+
+
 /**
  * ...
- * @author larsiusprime
+
  */
 public class LogicFarmer extends GenericJob
 {
 	static Logger logger = LoggerFactory.getLogger(LogicFarmer.class);
 	public LogicFarmer(AgentData data,Map<String,Good> goods)
 	{
-		super("Farmer",data,goods);
+		super(FARMER,data,goods);
 	}
 
 	@Override
@@ -37,13 +42,13 @@ public class LogicFarmer extends GenericJob
 				produce("food",4,1);
 				consume("wood",1,1);
 				consume("tools",1,0.1);
-				logger.info("produce 4 food, consume 1 wood, tool damage 10%");
+				// logger.info("produce 4 food, consume 1 wood, tool damage 10%");
 			}
 			else{
 				//produce 2 food, consume 1 wood
 				produce("food",2,1);
 				consume("wood",1,1);
-				logger.info("produce 2 food, consume 1 wood");
+				// logger.info("produce 2 food, consume 1 wood");
 			}	
 		}
 		else

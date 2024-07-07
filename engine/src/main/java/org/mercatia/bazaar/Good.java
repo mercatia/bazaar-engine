@@ -5,6 +5,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 /**
  */
 public class Good {
+
+	public static interface GoodType {}
+
 	@JsonProperty("id")
 	public String id = ""; // string id of good
 

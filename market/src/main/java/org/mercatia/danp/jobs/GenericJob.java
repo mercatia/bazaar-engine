@@ -7,6 +7,7 @@ import org.mercatia.bazaar.Good;
 import org.mercatia.bazaar.agent.AgentData;
 import org.mercatia.bazaar.agent.BasicAgent;
 import org.mercatia.bazaar.market.Market;
+import org.mercatia.danp.DoranParberryEconomy.DPEJobs;
 
 /**
  * ...
@@ -14,8 +15,8 @@ import org.mercatia.bazaar.market.Market;
  */
 public abstract class GenericJob extends BasicAgent {
 
-	public GenericJob(String id, AgentData data, Map<String, Good> goods) {
-		super(id, data, goods);
+	public GenericJob(DPEJobs id, AgentData data, Map<String, Good> goods) {
+		super((Logic)id, data, goods);
 	}
 
 	public void makeRoomFor(Market market, BasicAgent agent, String good, double amt) {

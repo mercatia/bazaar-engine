@@ -6,15 +6,15 @@ import org.mercatia.bazaar.Good;
 import org.mercatia.bazaar.agent.AgentData;
 import org.mercatia.bazaar.market.Market;
 
+import static org.mercatia.danp.DoranParberryEconomy.DPEJobs.REFINER;
+
 /**
-/**
- * ...
- * @author larsiusprime
+
  */
 public class LogicRefiner extends GenericJob {
 
 	public LogicRefiner(AgentData data, Map<String, Good> goods) {
-		super("Refiner", data, goods);
+		super(REFINER, data, goods);
 	}
 
 	@Override
@@ -42,7 +42,7 @@ public class LogicRefiner extends GenericJob {
 				}
 				produce("metal", max);
 				consume("ore", max);
-				consume( "food", 1);
+				consume("food", 1);
 			}
 		} else {
 			//fined $2 for being idle

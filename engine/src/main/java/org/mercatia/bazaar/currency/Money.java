@@ -1,7 +1,9 @@
 package org.mercatia.bazaar.currency;
+import java.util.*;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 import org.mercatia.bazaar.utils.Range;
-import java.math.*;
 
 public class Money extends Range.RangeType<Money> {
 
@@ -178,6 +180,15 @@ public class Money extends Range.RangeType<Money> {
 
         var avg = sum.divide(new BigDecimal(2),2,RoundingMode.HALF_UP);
         return this.toNew(avg.doubleValue());
+    }
+
+    public static Money average(List<Money> list){
+        Money sum = Money.NONE();
+        for (var m : list){
+            sum = m.add(sum);
+        }
+
+        return sum.multiply(1.0/list.size());
     }
 
     private record J(String currency, double value) implements Jsony {

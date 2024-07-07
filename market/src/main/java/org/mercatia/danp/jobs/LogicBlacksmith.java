@@ -3,9 +3,10 @@ package org.mercatia.danp.jobs;
 import java.util.Map;
 
 import org.mercatia.bazaar.Good;
-import org.mercatia.bazaar.agent.Agent;
 import org.mercatia.bazaar.agent.AgentData;
 import org.mercatia.bazaar.market.Market;
+
+import static org.mercatia.danp.DoranParberryEconomy.DPEJobs.BLACKSMITH;
 
 /**
 
@@ -13,7 +14,7 @@ import org.mercatia.bazaar.market.Market;
 public class LogicBlacksmith extends GenericJob {
 
 	public LogicBlacksmith(AgentData data, Map<String, Good> goods) {
-		super("Blacksmith", data, goods);
+		super(BLACKSMITH, data, goods);
 	}
 
 	@Override
@@ -21,8 +22,8 @@ public class LogicBlacksmith extends GenericJob {
 		double food = queryInventory("food");
 		double metal = queryInventory("metal");
 
-		boolean has_food = food >= 1;
-		boolean has_metal = metal >= 1;
+		boolean has_food = food >= 1.0;
+		boolean has_metal = metal >= 1.0;
 
 		if (has_food && has_metal) {
 			//convert all metal into tools

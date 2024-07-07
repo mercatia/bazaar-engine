@@ -7,13 +7,12 @@ import org.mercatia.bazaar.Good;
 import org.mercatia.bazaar.Offer;
 import org.mercatia.bazaar.currency.Currency;
 import org.mercatia.bazaar.currency.Money;
-import org.mercatia.bazaar.market.BasicMarket;
 import org.mercatia.bazaar.market.Market;
+import org.mercatia.bazaar.utils.Range;
+import org.mercatia.bazaar.utils.Range.LIMIT;
 import org.mercatia.bazaar.utils.ValueRT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.mercatia.bazaar.utils.Range;
-import org.mercatia.bazaar.utils.Range.LIMIT;
 
 /**
  * An agent that performs the basic logic from the Doran & Parberry article
@@ -31,7 +30,7 @@ public class BasicAgent extends Agent {
 	public static double LOW_INVENTORY = 0.1; // 10% of ideal inventory = "LOW"
 	public static double HIGH_INVENTORY = 2.0; // 200% of ideal inventory = "HIGH"
 
-	public BasicAgent(String id, AgentData data, Map<String, Good> goods) {
+	public BasicAgent(Agent.Logic id, AgentData data, Map<String, Good> goods) {
 		super(id, data, goods);
 	}
 
@@ -69,7 +68,7 @@ public class BasicAgent extends Agent {
 			offer = createAsk(bazaar, commodity, surplus);
 			if (offer != null) {
 				bazaar.ask(offer);
-				logger.debug("{} offer {} ", this.name, offer);
+				logger.debug("{} offer {} ", this.logic.label(), offer);
 			}
 		} else {
 			double shortage = inventory.shortage(commodity);
@@ -91,7 +90,7 @@ public class BasicAgent extends Agent {
 					offer = createBid(bazaar, commodity, limit);
 					if (offer != null) {
 						bazaar.bid(offer);
-						logger.debug("{} offer {} ", this.name, offer);
+						logger.debug("{} offer {} ", this.logic.label(), offer);
 					}
 				}
 			} else if (shortage>0){

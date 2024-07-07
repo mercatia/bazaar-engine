@@ -19,8 +19,8 @@
     "farmer": {
       "money": 100,
       "inventory": {
-        "start": { "food": 0, "tools": 1, "wood": 0 },
-        "ideal": { "food": 0, "tools": 1, "wood": 3 },
+        "start": { "food": 0, "tools": 1, "wood": 0, "ore": 0, "metal": 0 },
+        "ideal": { "food": 0, "tools": 1, "wood": 3, "ore": 0, "metal": 0 },
         "max_size": 20
       },
       "logic": "farmer"
@@ -28,8 +28,8 @@
     "miner": {
       "money": 100,
       "inventory": {
-        "start": { "food": 1, "tools": 1, "ore": 0 },
-        "ideal": { "food": 3, "tools": 1, "ore": 0 },
+        "start": { "food": 1, "tools": 1, "ore": 0, "wood": 0, "metal": 0 },
+        "ideal": { "food": 3, "tools": 1, "ore": 0, "wood": 0, "metal": 0 },
         "max_size": 20
       },
       "logic": "miner"
@@ -37,8 +37,8 @@
     "refiner": {
       "money": 100,
       "inventory": {
-        "start": { "food": 1, "tools": 1, "metal": 0, "ore": 0 },
-        "ideal": { "food": 3, "tools": 1, "metal": 0, "ore": 5 },
+        "start": { "food": 1, "tools": 1, "metal": 0, "ore": 0, "wood": 0 },
+        "ideal": { "food": 3, "tools": 1, "metal": 0, "ore": 5, "wood": 0 },
         "max_size": 20
       },
       "logic": "refiner"
@@ -46,8 +46,8 @@
     "woodcutter": {
       "money": 100,
       "inventory": {
-        "start": { "food": 1, "tools": 1, "wood": 0 },
-        "ideal": { "food": 3, "tools": 1, "wood": 0 },
+        "start": { "food": 1, "tools": 1, "wood": 0, "ore": 0, "metal": 0 },
+        "ideal": { "food": 3, "tools": 1, "wood": 0, "ore": 0, "metal": 0 },
         "max_size": 20
       },
       "logic": "woodcutter"
@@ -55,8 +55,8 @@
     "blacksmith": {
       "money": 100,
       "inventory": {
-        "start": { "food": 1, "tools": 0, "metal": 0, "ore": 0 },
-        "ideal": { "food": 3, "tools": 1, "metal": 5, "ore": 0 },
+        "start": { "food": 1, "tools": 0, "metal": 0, "ore": 0, "wood": 0 },
+        "ideal": { "food": 3, "tools": 1, "metal": 5, "ore": 0, "wood": 0 },
         "max_size": 20
       },
       "logic": "blacksmith"

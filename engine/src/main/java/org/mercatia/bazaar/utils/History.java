@@ -11,7 +11,7 @@ public class History implements Jsonable {
 	public HistoryLog<ValueRT> asks;
 	public HistoryLog<ValueRT> bids;
 	public HistoryLog<ValueRT> trades;
-	public HistoryLog<ValueRT> profit;
+	public HistoryLog<Money> profit;
 
 	public History() {
 		prices = new HistoryLog<>(EconNoun.Price);
@@ -22,10 +22,7 @@ public class History implements Jsonable {
 	}
 
 	public void register(String good) {
-		prices.register(good);
-		asks.register(good);
-		bids.register(good);
-		trades.register(good);
+
 		profit.register(good);
 	}
 
@@ -36,4 +33,15 @@ public class History implements Jsonable {
 	public Jsony jsonify() {
 		return new J(prices.jsonify(), asks.jsonify(), bids.jsonify(), trades.jsonify(), profit.jsonify());
 	}
+
+	public void registerAgentType(String agentType) {
+		profit.register(agentType);
+	}
+
+    public void registerGood(String good) {
+		prices.register(good);
+		asks.register(good);
+		bids.register(good);
+		trades.register(good);
+    }
 }

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 
 import org.junit.jupiter.api.Test;
 
@@ -86,13 +87,43 @@ public class MoneyTest {
     }
 
     @Test
+    public void testAverageList_I() {
+        var builder = Money.builder();
+        assertNotNull(builder);
+
+        var values = new ArrayList<Money>();
+        var x1 = new BigDecimal(0.1);
+        for (var x = 0; x < 105; x++) {
+            var m = Money.from(Currency.DEFAULT, x1.doubleValue());
+            values.add(m);
+        }
+        var av = Money.average(values);
+        assertEquals(Money.from(Currency.DEFAULT,0.1),av);
+    }
+
+    @Test
+    public void testAverageList_II(){
+        var builder = Money.builder();
+        assertNotNull(builder);
+        var values = new ArrayList<Money>();
+        for (var x = 0; x < 105; x++) {
+          
+            var mx = builder.currency(Currency.DEFAULT).unit(1).fractional(x).build();
+            assertNotNull(mx);
+            values.add(mx);
+        }
+        var av = Money.average(values);
+        assertEquals(Money.from(Currency.DEFAULT,1.52),av);
+    }
+
+    @Test
     public void testMultiply() {
         var builder = Money.builder();
         assertNotNull(builder);
 
         var x1 = new BigDecimal(0.0);
         var yf = new BigDecimal(0.5);
-   
+
         var my = Money.from(Currency.DEFAULT, yf.doubleValue());
         var mz = Money.from(Currency.DEFAULT, 2.0);
         for (var x = 0; x < 105; x++) {
@@ -101,12 +132,12 @@ public class MoneyTest {
 
             var mx = Money.from(Currency.DEFAULT, x1.doubleValue());
             var p = mx.multiply(my);
-            
+
             var q = p.multiply(mz);
 
-            assertEquals(mx,q);
-         
-            assertEquals(Money.NONE(),mx.subtract(Money.from(Currency.DEFAULT,x1.doubleValue())));
+            assertEquals(mx, q);
+
+            assertEquals(Money.NONE(), mx.subtract(Money.from(Currency.DEFAULT, x1.doubleValue())));
         }
     }
 
@@ -128,13 +159,12 @@ public class MoneyTest {
     }
 
     @Test
-    public void substract(){
+    public void substract() {
         var a = Money.from(Currency.DEFAULT, 0);
         var b = Money.from(Currency.DEFAULT, a.addFractional(100).as());
 
         assertEquals(a, b.subtract(b));
-        assertEquals(a.subtract(b).add(b),Money.NONE());
-        
+        assertEquals(a.subtract(b).add(b), Money.NONE());
 
     }
 }
