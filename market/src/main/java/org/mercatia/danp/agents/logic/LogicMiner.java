@@ -1,12 +1,12 @@
-package org.mercatia.danp.jobs;
+package org.mercatia.danp.agents.logic;
 
 import static org.mercatia.danp.DoranParberryEconomy.DPEJobs.MINER;
 
 import java.util.Map;
 
-import org.mercatia.bazaar.Good;
-import org.mercatia.bazaar.agent.AgentData;
-import org.mercatia.bazaar.market.Market;;
+import org.mercatia.bazaar.goods.Good;
+import org.mercatia.bazaar.market.Market;
+import org.mercatia.danp.startingdata.AgentData;;
 
 
 /**

@@ -4,25 +4,29 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.mercatia.Jsonable;
-import org.mercatia.bazaar.Good;
+import org.mercatia.bazaar.goods.Good;
+import org.mercatia.bazaar.goods.Good.GoodType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  */
 public class Inventory implements Jsonable {
 
+	static Logger logger = LoggerFactory.getLogger(Inventory.class);
+
 	public double maxSize = 0.0;
-	private Map<String, Double> sizes;
-	private Map<String, Double> stuff;
-	private Map<String, Double> ideal;
+	private Map<Good.GoodType, Good> goodMap;
+	private Map<Good.GoodType, Double> stuff;
+	private Map<Good.GoodType, Double> ideal;
 
 	// key:commodity_id, val:amount
 	// ideal counts for each thing
 	// how much space each thing takes up
 	public Inventory() {
-		sizes = new HashMap<>();
+		goodMap = new HashMap<>();
 		stuff = new HashMap<>();
 		ideal = new HashMap<>();
-		maxSize = 0;
 	}
 
 	
@@ -31,10 +35,10 @@ public class Inventory implements Jsonable {
 
 	@Override
 	public Jsony jsonify() {
-		return new j(maxSize,stuff);
+		return null;//new j(maxSize,stuff);
 	}
 
-	protected Inventory(double maxSize, Map<String, Double> ideal, Map<String, Double> start, Map<String, Good> goods) {
+	public Inventory(double maxSize, Map<GoodType, Double> ideal, Map<GoodType, Double> start, Map<GoodType, Good> goods) {
 		this();
 		this.maxSize = maxSize;
 
@@ -46,9 +50,8 @@ public class Inventory implements Jsonable {
 			this.stuff.put(entry.getKey(), entry.getValue());
 		}
 
-		sizes = new HashMap<>();
-		for (var good : goods.entrySet()) {
-			sizes.put(good.getKey(), good.getValue().size);
+		for (var entry : goods.entrySet()) {
+			this.goodMap.put(entry.getKey(), entry.getValue());
 		}
 	}
 
@@ -59,18 +62,18 @@ public class Inventory implements Jsonable {
 	 * @return
 	 */
 
-	public double query(String goodid) {
+	public double query(GoodType goodid) {
 		if (stuff.containsKey(goodid)) {
 			return stuff.get(goodid);
 		}
-		return 0;
+		return 0.0;
 	}
 
-	public double ideal(String goodid) {
+	public double ideal(GoodType goodid) {
 		if (ideal.containsKey(goodid)) {
 			return ideal.get(goodid);
 		}
-		return 0;
+		return 0.0;
 	}
 
 	public double getEmptySpace() {
@@ -79,15 +82,15 @@ public class Inventory implements Jsonable {
 
 	public double getUsedSpace() {
 		double space_used = 0.0f;
-		for (String key : stuff.keySet()) {
-			space_used += stuff.get(key) * sizes.get(key);
+		for (GoodType key : stuff.keySet()) {
+			space_used += stuff.get(key) * goodMap.get(key).getSize();
 		}
 		return space_used;
 	}
 
-	public double getCapacityFor(String goodid) {
-		if (sizes.containsKey(goodid)) {
-			return sizes.get(goodid);
+	public double getCapacityFor(GoodType goodid) {
+		if (goodMap.containsKey(goodid)) {
+			return goodMap.get(goodid).getSize();
 		}
 		return -1;
 	}
@@ -99,7 +102,7 @@ public class Inventory implements Jsonable {
 	 * @param delta_     amount added
 	 */
 
-	public void change(String goodid, double delta) {
+	public void change(GoodType goodid, double delta) {
 		double result;
 
 		if (stuff.containsKey(goodid)) {
@@ -123,10 +126,11 @@ public class Inventory implements Jsonable {
 	 * @return
 	 */
 
-	public double surplus(String goodid) {
+	public double surplus(GoodType goodid) {
 		double amt = query(goodid);
 		if (ideal.containsKey(goodid)) {
 			double idealAmt = ideal.get(goodid);
+			logger.info("{} Ideal {} Actual {}",goodid,idealAmt,amt);
 			if (amt > idealAmt) {
 				return Math.floor(amt - idealAmt);
 			}
@@ -142,7 +146,7 @@ public class Inventory implements Jsonable {
 	 * @return
 	 */
 
-	public double shortage(String goodid) {
+	public double shortage(GoodType goodid) {
 		if (!stuff.containsKey(goodid)) {
 			return 0;
 		}
@@ -155,8 +159,8 @@ public class Inventory implements Jsonable {
 		return 0;
 	}
 
-	public String getMostHeld(){
-		String mostHeld = "";
+	public GoodType getMostHeld(){
+		GoodType mostHeld =null;
 		double held = 0.0;
 		for (var e : stuff.entrySet()){
 			if (e.getValue()>held){
@@ -168,10 +172,7 @@ public class Inventory implements Jsonable {
 		return mostHeld;
 	}
 
-	public static Inventory builderFromData(InventoryData data, Map<String, Good> goods) {
-		var invertory = new Inventory(data.maxSize, data.ideal, data.start, goods);
-		return invertory;
-	}
+
 
 	public String toString() {
 		var sb = new StringBuilder();

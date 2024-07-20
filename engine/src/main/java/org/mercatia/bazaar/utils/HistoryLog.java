@@ -12,18 +12,18 @@ import org.mercatia.Jsonable;
 /**
 
  */
-public class HistoryLog<T extends Range.RangeType<T>> implements Jsonable {
-	EconNoun type;
-	Map<String, ArrayList<T>> log;
+public class HistoryLog<K extends Typed, T extends Range.RangeType<T>> implements Jsonable {
+	HistoryClass historyClass;
+	Map<K, ArrayList<T>> log;
 
 	protected ReentrantLock mutex = new ReentrantLock();
 
-	public HistoryLog(EconNoun type) {
-		this.type = type;
-		log = new HashMap<String, ArrayList<T>>();
+	public HistoryLog(HistoryClass historyClass) {
+		this.historyClass = historyClass;
+		log = new HashMap<K, ArrayList<T>>();
 	}
 
-	public List<T> get(String n) {
+	public List<T> get(K n) {
 		try {
 			mutex.lock();
 			return log.get(n);
@@ -39,33 +39,20 @@ public class HistoryLog<T extends Range.RangeType<T>> implements Jsonable {
 	 * @param name
 	 * @param amount
 	 */
-	public void add(String name, T amount) {
+	public void add(K name, T amount) {
 		try {
 			mutex.lock();
 			if (log.containsKey(name)) {
 				var list = log.get(name);
 				list.add(amount);
+			} else {
+				var list = new ArrayList<T>();
+				list.add(amount);
+				log.put(name,list);
 			}
 		} finally {
 			mutex.unlock();
 		}
-	}
-
-	/**
-	 * Register a new category list in this log
-	 * 
-	 * @param name
-	 */
-	public void register(String name) {
-		try {
-			mutex.lock();
-			if (!log.containsKey(name)) {
-				log.put(name, new ArrayList<T>());
-			}
-		} finally {
-			mutex.unlock();
-		}
-
 	}
 
 	/**
@@ -76,32 +63,32 @@ public class HistoryLog<T extends Range.RangeType<T>> implements Jsonable {
 	 * @param range how far to look back
 	 * @return
 	 */
-	public T average(String name, int range) {
+	public T average(K name, int range) {
 		try {
 			mutex.lock();
-			if (log.containsKey(name)) {
-				List<T> list = log.get(name);
-				T amt = null;
-
-				var length = list.size();
-				if (length == 0 || range < 1) {
-					return null;
-				}
-
-				if (length < range) {
-					range = length;
-				}
-				for (var x = length - 1; x >= length - range; x--) {
-					amt = list.get(x).add(amt);
-				}
-
-				return amt.multiply(1.0 / range);
+			if (!log.containsKey(name)) {
+				log.put(name, new ArrayList<T>());
 			}
+			List<T> list = log.get(name);
+			T amt = null;
+
+			var length = list.size();
+			if (length == 0 || range < 1) {
+				return null;
+			}
+
+			if (length < range) {
+				range = length;
+			}
+			for (var x = length - 1; x >= length - range; x--) {
+				amt = list.get(x).add(amt);
+			}
+
+			return amt.multiply(1.0 / range);
+
 		} finally {
 			mutex.unlock();
 		}
-
-		return null;
 	}
 
 	private static record J(Map<String, List<Jsony>> log) implements Jsony {
@@ -114,23 +101,22 @@ public class HistoryLog<T extends Range.RangeType<T>> implements Jsonable {
 
 			var m = new HashMap<String, List<Jsony>>();
 			for (var logEntry : this.log.entrySet()) {
-				String key = logEntry.getKey();
+				K key = logEntry.getKey();
 				List<T> list = logEntry.getValue();
 				var l = list.stream().map(x -> x.jsonify()).collect(Collectors.toList());
-				m.put(key, l);
+				m.put(key.toString(), l);
 
-				//  var newList = list.steam().map(e->e.)
+				// var newList = list.steam().map(e->e.)
 			}
 
 			return new J(m);
 		} finally {
 			mutex.unlock();
 		}
-	
 
 	}
 
-	public String toString(){
+	public String toString() {
 		return this.log.toString();
 	}
 }

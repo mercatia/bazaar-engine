@@ -1,4 +1,4 @@
-package org.mercatia.bazaar.agent;
+package org.mercatia.danp.startingdata;
 
 import java.util.Map;
 

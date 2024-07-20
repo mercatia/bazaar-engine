@@ -5,7 +5,7 @@ import java.math.RoundingMode;
 
 import org.mercatia.bazaar.utils.Range;
 
-public class Money extends Range.RangeType<Money> {
+public class Money extends Range.RangeType<Money>  {
 
     private Currency currency;
 

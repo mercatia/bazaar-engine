@@ -18,3 +18,4 @@ plugins {
 
 rootProject.name = 'bazaar'
 include('app', 'engine', 'market')
+// include('engine')

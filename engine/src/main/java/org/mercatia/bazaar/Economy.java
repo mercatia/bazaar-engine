@@ -1,52 +1,44 @@
 package org.mercatia.bazaar;
 
-import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-import org.mercatia.bazaar.Transport.Actions;
-import org.mercatia.bazaar.Transport.MSG_TYPE;
-import org.mercatia.bazaar.Transport.MSG_KEYS;
 import org.mercatia.bazaar.agent.Agent;
-import org.mercatia.bazaar.agent.AgentData;
-import org.mercatia.bazaar.agent.LogicBuilder;
-import org.mercatia.bazaar.market.BasicMarket;
+import org.mercatia.bazaar.agent.AgentFactory;
+import org.mercatia.bazaar.goods.GoodFactory;
 import org.mercatia.bazaar.market.Market;
-import org.mercatia.bazaar.market.MarketData;
+import org.mercatia.bazaar.utils.Tick;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import io.vertx.core.Vertx;
 import io.vertx.core.eventbus.DeliveryOptions;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 
-public abstract class Economy {
+public abstract class Economy extends BootstrappedEntity {
 	private Map<String, Market> markets;
-	private LogicBuilder logicBuilder;
-	protected MarketData startingMarketData;
-	protected AgentData.Factory agentFactory;
-	protected MarketData.Factory marketFactory;
+
+	protected AgentFactory agentFactory;
+	
+	protected GoodFactory goodFactory;
 
 	protected EventBus eventBus;
 	protected String name;
 	protected String addr;
 
-
-	protected BigDecimal tick = new BigDecimal(0);
-
 	static Logger logger = LoggerFactory.getLogger(Transport.class);
 
 	public Economy(String name) {
+		super();
 		this.markets = new HashMap<String, Market>();
 		this.name = name;
 		this.addr = String.format("economy/%s", this.name);
 	}
 
-	public Economy configure(Vertx vertx) {
+	public Economy configure() {
 		this.eventBus = vertx.eventBus();
 
 		// add the event consumer here
@@ -63,9 +55,10 @@ public abstract class Economy {
 
 						break;
 					case TICK:
-						simulate(1);
+						var t = Tick.getTick().increment();
+						simulate();
 
-						reply.put("tick", this.tick.longValue());
+						reply.put("tick", t.toString());
 						break;
 
 					default:
@@ -81,10 +74,50 @@ public abstract class Economy {
 		return this;
 	}
 
-	public void start(Vertx vertx){
-		var markets = this.marketFactory.economy(this).build(vertx);
-		markets.forEach(m->addMarket(m));
+	/**
+	 * Called to start the economy working.
+	 * 
+	 * @return
+	 */
+	public Economy startEconomy() {
+		// all the factories should be configure by now.
+		var marketNames = this.getMarketNames();
+		
+		marketNames.forEach(name -> {
+			var marketFactory = getBootstrap().getMarketFactory(this);
+			var market = marketFactory.withName(name).withEconomy(this).build();
+			addMarket(market);
+		});
+
 		publishStarted();
+		return this;
+	}
+
+	public Economy stopEconomy() {
+		// TODO:
+		return this;
+	}
+
+	public String getName() {
+		return this.name;
+	}
+
+	public void addMarket(Market m) {
+		if (!markets.containsKey(m.getName())) {
+			markets.put(m.getName(), m);
+		}
+	}
+
+	public Market getMarket(String name) {
+		return markets.get(name);
+	}
+
+	public void simulate() {
+		var pointInTime = Tick.getTick().pointInTime();
+
+		for (Market m : markets.values()) {
+			m.simulate(pointInTime);
+		}
 	}
 
 	protected void publishStarted() {
@@ -95,64 +128,7 @@ public abstract class Economy {
 		this.eventBus.publish(addr, msg, new DeliveryOptions().addHeader("type", "event"));
 	}
 
-	public String getName() {
-		return this.name;
-	}
-
-	public void addMarket(Market m) {
-		if (!markets.containsKey(m.getName())) {
-			markets.put(m.getName(), m);
-
-		}
-	}
-
-	public AgentData.Factory getAgentFactory() {
-		return this.agentFactory;
-	}
-
-	
-	public MarketData.Factory getMarketFactory() {
-		return this.marketFactory;
-	}
-
-
-	public Market getMarket(String name) {
-		return markets.get(name);
-	}
-
-	public Set<String> getMarketNames() {
-		return markets.keySet();
-	}
-
-
-
-	public void simulate(int rounds) {
-		this.tick = this.tick.add(new BigDecimal(rounds));
-		logger.info("TICK {}",this.tick);
-		for (Market m : markets.values()) {
-			m.simulate(rounds);
-		}
-
-	}
-
-	public Economy setAgentFactory(AgentData.Factory factory) {
-		this.agentFactory = factory;
-		return this;
-	}
-
-	public Economy setMarketFactory(MarketData.Factory factory) {
-		this.marketFactory = factory;
-		return this;
-	}
-
-
-	public void setLogicBuilder(LogicBuilder builder) {
-		this.logicBuilder = builder;
-	}
-
-	public LogicBuilder getLogicBuilder() {
-		return this.logicBuilder;
-	}
+	public abstract Set<String> getMarketNames();
 
 	public abstract void onBankruptcy(Market m, Agent agent);
 

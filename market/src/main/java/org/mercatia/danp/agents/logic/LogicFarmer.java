@@ -1,11 +1,11 @@
-package org.mercatia.danp.jobs;
+package org.mercatia.danp.agents.logic;
 import java.util.Map;
 
-import org.mercatia.bazaar.Good;
 import org.mercatia.bazaar.agent.Agent;
-import org.mercatia.bazaar.agent.AgentData;
-import org.mercatia.bazaar.market.BasicMarket;
+import org.mercatia.bazaar.goods.Good;
 import org.mercatia.bazaar.market.Market;
+import org.mercatia.danp.markets.DPMarket;
+import org.mercatia.danp.startingdata.AgentData;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

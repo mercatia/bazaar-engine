@@ -1,11 +1,11 @@
 {
   "start_conditions": {
     "agents": {
-      "farmer": 2,
-      "miner": 2,
-      "woodcutter": 2,
-      "refiner": 2,
-      "blacksmith": 2
+      "farmer": 50,
+      "miner": 50,
+      "woodcutter": 50,
+      "refiner": 50,
+      "blacksmith": 50
     }
   },
   "goods": {

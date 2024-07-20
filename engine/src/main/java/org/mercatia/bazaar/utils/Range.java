@@ -2,7 +2,7 @@ package org.mercatia.bazaar.utils;
 
 import org.mercatia.Jsonable;
 
-public class Range<T extends Range.RangeType<T>> implements Jsonable {
+public class Range<T extends Range.RangeType<T>> implements Jsonable , Typed{
 
     public static abstract class RangeType<F> implements Jsonable, Cloneable {
         public abstract F add(F other);
@@ -161,6 +161,11 @@ public class Range<T extends Range.RangeType<T>> implements Jsonable {
     @Override
     public Jsony jsonify() {
         return new J(lower.as(), upper.as());
+    }
+
+    @Override
+    public String label() {
+        return toString();
     }
 
 }

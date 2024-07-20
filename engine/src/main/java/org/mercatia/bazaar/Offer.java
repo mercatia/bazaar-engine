@@ -1,16 +1,18 @@
 package org.mercatia.bazaar;
 
-import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import org.apache.commons.math3.ml.neuralnet.twod.util.QuantizationError;
 import org.apache.commons.text.RandomStringGenerator;
 import org.mercatia.Jsonable;
 import org.mercatia.bazaar.agent.Agent.ID;
+import org.mercatia.bazaar.currency.Currency;
 import org.mercatia.bazaar.currency.Money;
+import org.mercatia.bazaar.goods.Good.GoodType;
+import org.mercatia.bazaar.utils.QtyPrice;
 
 /**
 
@@ -18,55 +20,57 @@ import org.mercatia.bazaar.currency.Money;
 public class Offer implements Jsonable {
 
 	public static enum STATE {
-		ACCEPTED, REJECTED, PARTIAL, OFFERING
+		ACCEPTED, REJECTED, PARTIAL, PENDING, VOID
 	}
 
-	protected static class QtyPrice implements Jsonable {
-		double units;
-		Money unit_price;
-
-		public QtyPrice(double units, Money price) {
-			this.units = units;
-			this.unit_price = price;
-		}
-
-		public Money getUnitPrice() {
-			return this.unit_price;
-		}
-
-		public double getUnits() {
-			return units;
-		}
-
-		private record J(String units, Money unit_price) implements Jsony {
-		};
-
-		@Override
-		public Jsony jsonify() {
-			return new J(String.format("%.2f", this.units), unit_price);
-		};
-	}
+	public static enum Type {
+		BUY, SELL
+	};
 
 	static RandomStringGenerator generator = new RandomStringGenerator.Builder()
 			.withinRange('a', 'z').get();
 
+	/**
+	 * Return -
+	 * -1 if the first is less than the second,
+	 * 0 if equal
+	 * 1 if first is > second
+	 */
+	public static Comparator<Offer> offerSortAsc = (Offer a, Offer b) -> {
+		if (a.getMeanUnitPrice().less(b.getMeanUnitPrice())) {
+			return -1;
+		} else if (a.getMeanUnitPrice().greater(b.getMeanUnitPrice())) {
+			return 1;
+		} else {
+			return 0;
+		}
+
+	};
+
+	public static Comparator<Offer> offerSortDsc = offerSortAsc.reversed();
+
+	private int lineIndex = 0;
+
 	public static class OfferLine extends QtyPrice {
 
-		Resoultion resoultion;
+		STATE resolution;
 		Offer parent;
-
-		public OfferLine(Money price, Offer parent) {
-			this(1.0, price, parent);
-		}
+		int index;
 
 		public OfferLine(double units, Money price, Offer parent) {
 			super(units, price);
 			this.parent = parent;
-			this.resoultion = new Resoultion(STATE.OFFERING);
+			this.resolution = STATE.PENDING;
+			this.index = parent.lineIndex++;
+			;
 		}
 
-		public OfferLine setResoultion(Resoultion resoultion) {
-			this.resoultion = resoultion;
+		public Integer index() {
+			return index;
+		}
+
+		public OfferLine setResolution(STATE resolution) {
+			this.resolution = resolution;
 			return this;
 		}
 
@@ -74,55 +78,29 @@ public class Offer implements Jsonable {
 			return this.parent;
 		}
 
-		public Resoultion getResoultion() {
-			return this.resoultion;
+		public STATE getResolution() {
+			return this.resolution;
 		}
 
 		public String toString() {
-			return "(" + getParent().agent_id + "/" + getParent().offerID + ") " + getParent().type.name() + " "
-					+ getParent().good + " " + units + " of @ "
-					+ unit_price + " " + this.resoultion;
+			return "{" + units + " @ $" + unit_price + " " + this.resolution.name() + "}";
 		}
 
-	}
-
-	public static class Resoultion extends QtyPrice {
-		STATE resoultion;
-
-		public Resoultion(STATE resoultion) {
-			this(0.0, Money.NONE(), resoultion);
+		public double getUnits() {
+			return this.units;
 		}
-
-		public Resoultion(double units, Money price, STATE resoultion) {
-			super(units, price);
-			this.resoultion = resoultion;
-		}
-
 	}
 
-	public static enum Type {
-		BUY, SELL
-	};
+	protected String offerID;
+	protected GoodType good; // the thing offered
+	protected ID agent_id; // who offered this
+	protected Type type;
 
-	private String offerID;
-	public String good; // the thing offered
-	public double units; // how many units
-	private Money unit_price; // price per unit
-	public ID agent_id; // who offered this
-	private Type type;
+	protected Map<Integer, OfferLine> offerLines;
 
-	private List<Resoultion> resoultions;
-	private List<OfferLine> offerLines;
-
-	public Money getUnitPrice() {
-		return this.unit_price;
-	}
-
-	public Offer(ID agent_id, String commodity, double units, Money unit_price) {
+	public Offer(ID agent_id, GoodType commodity, double units, Money unit_price) {
 		this.agent_id = agent_id;
 		this.good = commodity;
-		this.units = units;
-		this.unit_price = unit_price;
 
 		if (unit_price.zeroOrLess() || units < 1.0) {
 			throw new RuntimeException(
@@ -130,34 +108,32 @@ public class Offer implements Jsonable {
 		}
 
 		this.offerID = generator.generate(20);
-		this.resoultions = new ArrayList<>();
-		this.offerLines = new ArrayList<>();
 
-		for (var x = 0; x < units; x++) {
-			offerLines.add(new Offer.OfferLine(unit_price, this));
-		}
+		// create initial order line
+		this.offerLines = new HashMap<Integer, OfferLine>();
+		var newOffer = new Offer.OfferLine(units, unit_price, this);
+		this.offerLines.put(newOffer.index(), newOffer);
 
 	}
 
 	public List<Offer.OfferLine> getOfferLines() {
-		return this.offerLines;
-	}
-
-	public boolean hasResolutions() {
-		// this.offerLines.stream().reduce(false , )
-		return this.resoultions.size() > 0;
-	}
-
-	public List<Resoultion> getResoultions() {
-		return this.resoultions;
-	}
-
-	public void addResoultion(Resoultion r) {
-		this.resoultions.add(r);
+		return this.offerLines.values().stream().collect(Collectors.toList());
 	}
 
 	public String getOfferID() {
 		return this.offerID;
+	}
+
+	public ID getOfferingAgent() {
+		return this.agent_id;
+	}
+
+	public boolean isBuy() {
+		return this.type == Type.BUY;
+	}
+
+	public boolean isSell() {
+		return this.type == Type.SELL;
 	}
 
 	public Offer setType(Type type) {
@@ -165,9 +141,40 @@ public class Offer implements Jsonable {
 		return this;
 	}
 
+	public GoodType getGoodType() {
+		return this.good;
+	}
+
+	/** Aveage */
+	public Money getMeanUnitPrice() {
+		var prices = this.offerLines.values().stream().map(e -> e.getUnitPrice()).collect(Collectors.toList());
+		return Money.average(prices);
+	}
+
+	public double getTotalUnits() {
+		double qty = this.offerLines.values().stream().map(e -> e.getUnits()).reduce(0.0, Double::sum);
+		return qty;
+	}
+
+	public Money getLowestUnitPrice() {
+		double lowest = this.offerLines.values().stream().map(e -> e.getUnitPrice().as()).reduce(Double.MAX_VALUE,
+				(a, b) -> a < b ? a : b);
+		return Money.from(Currency.DEFAULT, lowest);
+	}
+
+	public Money getHighestUnitPrice() {
+		double highest = this.offerLines.values().stream().map(e -> e.getUnitPrice().as()).reduce(Double.MIN_VALUE,
+				(a, b) -> a > b ? a : b);
+		return Money.from(Currency.DEFAULT, highest);	
+	}
+
 	public String toString() {
-		return "(" + agent_id + "/" + offerID + ") " + type.name() + " " + good + " " + units + " of @ "
-				+ unit_price;
+		var sb = new StringBuilder();
+		sb.append("(" + agent_id + "/" + offerID + ") " + String.format("%10s", type.name()) + " " + good);
+		for (var ol : offerLines.values()) {
+			sb.append(ol.toString()).append(" ");
+		}
+		return sb.toString();
 	}
 
 	private record J(String offerID, String good, String type, String units, Money unit_price, String offeringAgent,
@@ -177,8 +184,26 @@ public class Offer implements Jsonable {
 	@Override
 	public Jsony jsonify() {
 
-		List<Jsony> res = this.resoultions.stream().map(e -> e.jsonify()).collect(Collectors.toList());
+		// List<Jsony> res = this.resoultions.stream().map(e ->
+		// e.jsonify()).collect(Collectors.toList());
 
-		return new J(offerID, good, type.name(), String.format("%.2f", units), unit_price, agent_id.toString(), res);
+		// return new J(offerID, good, type.name(), agent_id.toString());
+		return null;
 	}
+
+	public boolean isFullyResolved() {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'isFullyResolved'");
+	}
+
+	public void completeLines(double quantity_traded, Money clearing_price) {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'completeLines'");
+	}
+
+	public void setOverallResolution(STATE state) {
+		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException("Unimplemented method 'setOverallResolution'");
+	}
+
 }
